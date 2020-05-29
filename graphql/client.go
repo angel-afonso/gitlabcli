@@ -30,6 +30,11 @@ func NewClient(session *auth.Session) Client {
 
 func (c *Client) send(data *strings.Reader, bind interface{}) {
 	req, err := http.NewRequest("POST", url, data)
+
+	if err != nil {
+		panic(err)
+	}
+
 	req.Header.Set("Authorization", fmt.Sprintf("%s %s", c.session.Type, c.session.Token))
 	req.Header.Set("Content-Type", "application/json")
 
