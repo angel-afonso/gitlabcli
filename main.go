@@ -4,19 +4,33 @@ import (
 	"log"
 	"os"
 
+	"github.com/angel-afonso/gitlabcli/actions"
 	"github.com/angel-afonso/gitlabcli/auth"
 	"github.com/angel-afonso/gitlabcli/graphql"
 	cli "github.com/urfave/cli/v2"
 )
 
 func main() {
-	graphql.NewClient(auth.OpenSession())
+	client := graphql.NewClient(auth.OpenSession())
 
 	app := &cli.App{
 		Commands: []*cli.Command{
 			{
-				Name:        "Project",
-				Description: "asdads",
+				Name:        "project",
+				Description: "Project related commands",
+				Subcommands: []*cli.Command{
+					{
+						Name:        "list",
+						Description: "List projects",
+						Action:      actions.ProjectList(&client),
+					},
+					{
+						Name:        "view",
+						Description: "View project",
+						Usage:       "project view <path>",
+						Action:      actions.ProjectView(&client),
+					},
+				},
 			},
 		},
 	}

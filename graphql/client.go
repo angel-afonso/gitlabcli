@@ -45,14 +45,16 @@ func (c *Client) send(data *strings.Reader, bind interface{}) {
 	}
 	defer resp.Body.Close()
 
-	body, _ := ioutil.ReadAll(resp.Body)
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		panic(err)
+	}
 
 	response := wrapper{Data: bind}
-	fmt.Printf(string(body))
 	err = json.Unmarshal(body, &response)
 
 	if err != nil {
-		fmt.Println(err)
+		panic(err)
 	}
-	fmt.Printf("%+v\n", response.Data)
 }

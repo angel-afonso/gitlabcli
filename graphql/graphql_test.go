@@ -11,7 +11,9 @@ func TestParseFields(t *testing.T) {
 	var query struct {
 		Projects struct {
 			Nodes []struct {
-				Name string
+				ID          string `graphql-bind:"id"`
+				Name        string
+				Description string
 			}
 		} `graphql:"(membership: true)"`
 	}
@@ -26,7 +28,7 @@ func TestParseFields(t *testing.T) {
 	}
 	q += "}"
 
-	assert.Equal(t, "{projects(membership: true){nodes{name}}}", q)
+	assert.Equal(t, "{projects(membership: true){nodes{id,name,description,}}}", q)
 
 }
 func TestFormatQuery(t *testing.T) {
@@ -38,7 +40,29 @@ func TestFormatQuery(t *testing.T) {
 		} `graphql:"(membership: true)"`
 	}
 
-	q := formatQuery(query)
+	q := formatQuery(query, nil)
 
-	assert.Equal(t, `{"query":"{projects(membership: true){nodes{name}}}"}`, q)
+	assert.Equal(t, `{"query":"{projects(membership: true){nodes{name,}}}","variables":{}}`, q)
+}
+
+func TestQueryWithVariables(t *testing.T) {
+	var query struct {
+		Projects struct {
+			Nodes []struct {
+				Name string
+			}
+		} `graphql:"(membership: true)"`
+	}
+
+	q := formatQuery(query, struct {
+		Field int32
+		Foo   string
+		Baz   int `graphql-type:"ID!"`
+	}{
+		Field: 123,
+		Foo:   "asd",
+		Baz:   123,
+	})
+
+	assert.Equal(t, `{"query":"query($field:Int,$foo:String,$baz:ID!){projects(membership: true){nodes{name,}}}","variables":{"field":123,"foo":"asd","baz":123}}`, q)
 }
