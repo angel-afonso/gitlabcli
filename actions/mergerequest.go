@@ -1,12 +1,12 @@
 package actions
 
 import (
-	"fmt"
 	"log"
 	"strings"
 
 	"github.com/angel-afonso/gitlabcli/graphql"
 	"github.com/angel-afonso/gitlabcli/utils"
+	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 )
 
@@ -20,10 +20,14 @@ func CreateMergeRequest(client *graphql.Client) func(*cli.Context) error {
 		}
 
 		path := context.Args().First()
-		title := utils.ReadLine("Merge request title: ")
-		source := utils.ReadLine("Source Branch: ")
-		target := utils.ReadLine("Target Branch: ")
-		description := utils.ReadLine("Description: ")
+		color.Cyan.Print("Merge request title: ")
+		title := utils.ReadLine()
+		color.Cyan.Print("Source Branch: ")
+		source := utils.ReadLine()
+		color.Cyan.Print("Target Branch: ")
+		target := utils.ReadLine()
+		color.Cyan.Print("Description: ")
+		description := utils.ReadLine()
 
 		var mutation struct {
 			MergeRequestCreate struct {
@@ -51,11 +55,12 @@ func CreateMergeRequest(client *graphql.Client) func(*cli.Context) error {
 		client.Mutation(&mutation, variables)
 
 		if len(mutation.MergeRequestCreate.Errors) > 0 {
-			fmt.Println(strings.Join(mutation.MergeRequestCreate.Errors, "\n"))
+			color.Red.Println(strings.Join(mutation.MergeRequestCreate.Errors, "\n"))
 			return nil
 		}
 
-		fmt.Printf("Created merge request !%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
+		color.Green.Print("Created merge request ")
+		color.BgCyan.Printf("!%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
 
 		return nil
 	}
