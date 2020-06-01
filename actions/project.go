@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/angel-afonso/gitlabcli/graphql"
 	"github.com/urfave/cli/v2"
@@ -35,6 +36,11 @@ func ProjectList(client *graphql.Client) func(*cli.Context) error {
 // ProjectView get and show data from a project by path
 func ProjectView(client *graphql.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
+
+		if context.Args().Len() < 1 {
+			log.Fatal("Expected project path")
+		}
+
 		var query struct {
 			Project struct {
 				ID          string `graphql-bind:"id"`

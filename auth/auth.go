@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"net/http"
 	"os/exec"
 	"runtime"
@@ -29,7 +30,7 @@ type Session struct {
 func OpenSession() *Session {
 	db, err := bbolt.Open("session", 0600, nil)
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err.Error())
 	}
 	session, err := lookUpSession(db)
 
@@ -74,7 +75,7 @@ func storeToken(db *bbolt.DB, data map[string]string) *Session {
 	err := db.Update(func(tx *bbolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte("session"))
 		if err != nil {
-			panic(err.Error())
+			log.Fatal(err.Error())
 		}
 
 		err = bucket.Put([]byte("access_token"), []byte(data["access_token"]))
@@ -84,7 +85,7 @@ func storeToken(db *bbolt.DB, data map[string]string) *Session {
 	})
 
 	if err != nil {
-		panic(err.Error())
+		log.Fatal(err.Error())
 	}
 	color.Green.Light().Println("Login successful!")
 

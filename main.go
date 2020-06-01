@@ -32,6 +32,18 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:        "mergerequest",
+				Description: "Merge Request related commands",
+				Subcommands: []*cli.Command{
+					{
+						Name:        "create",
+						Description: "Create new merge request",
+						Usage:       "mergerequest create <project path>",
+						Action:      actions.CreateMergeRequest(&client),
+					},
+				},
+			},
 		},
 	}
 
