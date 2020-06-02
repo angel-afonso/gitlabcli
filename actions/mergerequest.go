@@ -4,8 +4,8 @@ import (
 	"log"
 	"strings"
 
-	"github.com/angel-afonso/gitlabcli/graphql"
-	"github.com/angel-afonso/gitlabcli/utils"
+	"gitlab.com/angel-afonso/gitlabcli/graphql"
+	"gitlab.com/angel-afonso/gitlabcli/utils"
 	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
 )

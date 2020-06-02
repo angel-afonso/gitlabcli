@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/angel-afonso/gitlabcli/graphql"
+	"gitlab.com/angel-afonso/gitlabcli/graphql"
 	"github.com/urfave/cli/v2"
 )
 

@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/angel-afonso/gitlabcli/auth"
+	"gitlab.com/angel-afonso/gitlabcli/auth"
 )
 
 const (

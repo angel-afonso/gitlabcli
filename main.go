@@ -4,9 +4,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/angel-afonso/gitlabcli/actions"
-	"github.com/angel-afonso/gitlabcli/auth"
-	"github.com/angel-afonso/gitlabcli/graphql"
+	"gitlab.com/angel-afonso/gitlabcli/actions"
+	"gitlab.com/angel-afonso/gitlabcli/auth"
+	"gitlab.com/angel-afonso/gitlabcli/graphql"
 	cli "github.com/urfave/cli/v2"
 )
 
