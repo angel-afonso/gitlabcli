@@ -1,4 +1,4 @@
-module github.com/angel-afonso/gitlabcli
+module gitlab.com/angel-afonso/gitlabcli
 
 go 1.14
 

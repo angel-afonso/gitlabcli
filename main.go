@@ -4,6 +4,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/angel-afonso/gitlabcli/utils"
+
 	"github.com/angel-afonso/gitlabcli/actions"
 	"github.com/angel-afonso/gitlabcli/auth"
 	"github.com/angel-afonso/gitlabcli/graphql"
@@ -11,6 +13,8 @@ import (
 )
 
 func main() {
+	println(utils.GetRemotePath("origin"))
+	return
 	client := graphql.NewClient(auth.OpenSession())
 
 	app := &cli.App{
@@ -39,7 +43,7 @@ func main() {
 					{
 						Name:        "create",
 						Description: "Create new merge request",
-						Usage:       "mergerequest create <project path>",
+						Usage:       "mergerequest create [project path]",
 						Action:      actions.CreateMergeRequest(&client),
 					},
 				},
