@@ -1,5 +1,8 @@
 image: golang:latest
 
+include:
+  - template: Dependency-Scanning.gitlab-ci.yml
+
 variables:
   REPO_NAME: gitlab.com/angel-afonso/gitlabcli
 
