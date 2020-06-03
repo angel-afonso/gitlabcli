@@ -1,22 +1,32 @@
-package graphql
+package api
 
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"net/http"
 	"reflect"
 	"strings"
 )
 
+func graphqlReq(data *strings.Reader) *http.Request {
+	req, err := http.NewRequest("POST", graphql, data)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return req
+}
+
 // Query Send a query graphql request
 func (c *Client) Query(query interface{}, variables interface{}) {
-	data := strings.NewReader(formatQuery(query, variables))
-	c.send(data, query)
+	bindGraphqlResponse(c.send(graphqlReq(strings.NewReader(formatQuery(query, variables)))), query)
 }
 
 // Mutation Send a mutation graphql request
 func (c *Client) Mutation(mutation interface{}, vars interface{}) {
-	data := strings.NewReader(formatMutation(mutation, vars))
-	c.send(data, mutation)
+	bindGraphqlResponse(c.send(graphqlReq(strings.NewReader(formatMutation(mutation, vars)))), mutation)
 }
 
 func parseQueryBody(query interface{}) string {

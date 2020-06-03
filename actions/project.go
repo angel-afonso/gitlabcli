@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"log"
 
-	"gitlab.com/angel-afonso/gitlabcli/graphql"
 	"github.com/urfave/cli/v2"
+	"gitlab.com/angel-afonso/gitlabcli/graphql"
+	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
 
 // ProjectList send request to get user's project
 // and print a table with projects
-func ProjectList(client *graphql.Client) func(*cli.Context) error {
+func ProjectList(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
 		var query struct {
 			Projects struct {
@@ -34,10 +35,19 @@ func ProjectList(client *graphql.Client) func(*cli.Context) error {
 }
 
 // ProjectView get and show data from a project by path
-func ProjectView(client *graphql.Client) func(*cli.Context) error {
+func ProjectView(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
+		var path string
 
-		if context.Args().Len() < 1 {
+		if utils.IsGitRepository() && context.Args().Len() == 0 {
+			remotes := utils.GetRemote()
+			if len(remotes) > 1 {
+				path = utils.GetRemotePath(utils.AskRemote(remotes))
+			}
+			path = utils.GetRemotePath(remotes[0])
+		} else if context.Args().Len() > 0 {
+			path = context.Args().First()
+		} else {
 			log.Fatal("Expected project path")
 		}
 
@@ -50,9 +60,9 @@ func ProjectView(client *graphql.Client) func(*cli.Context) error {
 		}
 
 		variables := struct {
-			Path string `graphql-type:"ID!"`
+			path string `graphql-type:"ID!"`
 		}{
-			Path: context.Args().Get(0),
+			path,
 		}
 
 		client.Query(&query, variables)

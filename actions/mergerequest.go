@@ -4,22 +4,32 @@ import (
 	"log"
 	"strings"
 
-	"gitlab.com/angel-afonso/gitlabcli/graphql"
-	"gitlab.com/angel-afonso/gitlabcli/utils"
 	"github.com/gookit/color"
 	"github.com/urfave/cli/v2"
+	"gitlab.com/angel-afonso/gitlabcli/graphql"
+	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
 
 // CreateMergeRequest send a request to create merge request
 // by given project path
-func CreateMergeRequest(client *graphql.Client) func(*cli.Context) error {
+func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
 
-		if context.Args().Len() < 1 {
+		var path string
+
+		if utils.IsGitRepository() {
+			remotes := utils.GetRemote()
+			if len(remotes) > 1 {
+				path = utils.GetRemotePath(utils.AskRemote(remotes))
+			}
+			path = utils.GetRemotePath(remotes[0])
+
+		} else if context.Args().Len() > 0 {
+			path = context.Args().First()
+		} else {
 			log.Fatal("Expected project path")
 		}
 
-		path := context.Args().First()
 		color.Cyan.Print("Merge request title: ")
 		title := utils.ReadLine()
 		color.Cyan.Print("Source Branch: ")

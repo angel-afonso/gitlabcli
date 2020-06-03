@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	client := graphql.NewClient(auth.OpenSession())
+	client := api.NewClient(auth.OpenSession())
 
 	app := &cli.App{
 		Commands: []*cli.Command{
