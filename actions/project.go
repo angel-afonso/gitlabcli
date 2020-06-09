@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/urfave/cli/v2"
-	"gitlab.com/angel-afonso/gitlabcli/graphql"
+	"gitlab.com/angel-afonso/gitlabcli/api"
 	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
 

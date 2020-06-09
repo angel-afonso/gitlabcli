@@ -4,16 +4,17 @@ import (
 	"log"
 	"os"
 
-	"gitlab.com/angel-afonso/gitlabcli/actions"
-	"gitlab.com/angel-afonso/gitlabcli/auth"
-	"gitlab.com/angel-afonso/gitlabcli/graphql"
 	cli "github.com/urfave/cli/v2"
+	"gitlab.com/angel-afonso/gitlabcli/actions"
+	"gitlab.com/angel-afonso/gitlabcli/api"
+	"gitlab.com/angel-afonso/gitlabcli/auth"
 )
 
 func main() {
 	client := api.NewClient(auth.OpenSession())
 
 	app := &cli.App{
+		Version: "0.0.1",
 		Commands: []*cli.Command{
 			{
 				Name:        "project",
