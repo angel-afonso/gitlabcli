@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"fmt"
 	"log"
 	"strings"
 
@@ -69,9 +70,43 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 			return nil
 		}
 
-		color.Green.Print("Created merge request ")
-		color.BgCyan.Printf("!%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
+		color.Green.Printf("Created merge request !%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
+		color.Reset()
+
+		fmt.Println("Assign merge request?")
+
+		AssignMergeRequest(client, path)
 
 		return nil
+	}
+}
+
+// AssignMergeRequest send request to assign merge request to a project member
+func AssignMergeRequest(client *api.Client, path string) {
+	var queryMembers struct {
+		Project struct {
+			ProjectMembers struct {
+				Nodes []struct {
+					User struct {
+						Name     string
+						Username string
+					}
+					AccessLevel int8
+				}
+			}
+		} `graphql:"(fullPath:$path)"`
+	}
+
+	variables := struct {
+		path string `graphql-type:"ID!"`
+	}{
+		path,
+	}
+
+	client.Query(&queryMembers, variables)
+
+	for index, member := range queryMembers.Project.ProjectMembers.Nodes {
+		color.Cyan.Println("Members:")
+		color.Green.Printf("(%d) %s(%s)\n", index, member.User.Name, member.User.Username)
 	}
 }

@@ -1,8 +1,10 @@
 package utils
 
 import (
+	"bufio"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"regexp"
 	"strings"
@@ -12,9 +14,9 @@ import (
 
 // ReadLine read text from stdin until break line
 func ReadLine() string {
-	var input string
-	fmt.Scanf("%s", &input)
-	return input
+	reader := bufio.NewReader(os.Stdin)
+	readed, _ := reader.ReadString('\n')
+	return readed[:len(readed)-1]
 }
 
 // ReadInt get a int value from user input
