@@ -40,7 +40,7 @@ func bindGraphqlResponse(body []byte, bind interface{}) {
 }
 
 func bindRestResponse(body []byte, bind interface{}) {
-	response := wrapper{Data: bind}
+	response := bind
 	err := json.Unmarshal(body, &response)
 
 	if err != nil {

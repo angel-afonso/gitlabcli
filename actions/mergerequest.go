@@ -73,40 +73,39 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 		color.Green.Printf("Created merge request !%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
 		color.Reset()
 
-		fmt.Println("Assign merge request?")
+		fmt.Print("Assign merge request? ")
+		color.Blue.Print("y/n")
+		color.FgGray.Print("default: n")
+		color.Reset()
 
-		AssignMergeRequest(client, path)
+		if choice := utils.ReadLine(); choice == "y" || choice == "yes" {
+			users := getProjectMembers(client, path)
+			for index, user := range users {
+				color.Blue.Printf("%d ", index+1)
+				color.Green.Printf("%s (%s)\n", user.Name, user.Username)
+			}
+
+			index := utils.ReadInt()
+
+			var assignMutation struct {
+				MergeRequestSetAssignees struct {
+					Errors []string
+				} `graphql:"(input:{projectPath:$path,iid:$iid,assigneeUsernames:$usernames})"`
+			}
+
+			assignVariables := struct {
+				path      string   `graphql-type:"ID!"`
+				iid       string   `graphql-type:"String!"`
+				usernames []string `graphql-type:"[String!]!"`
+			}{
+				path:      path,
+				iid:       mutation.MergeRequestCreate.MergeRequest.Iid,
+				usernames: []string{users[index].Username},
+			}
+
+			client.Mutation(assignMutation, assignVariables)
+		}
 
 		return nil
-	}
-}
-
-// AssignMergeRequest send request to assign merge request to a project member
-func AssignMergeRequest(client *api.Client, path string) {
-	var queryMembers struct {
-		Project struct {
-			ProjectMembers struct {
-				Nodes []struct {
-					User struct {
-						Name     string
-						Username string
-					}
-					AccessLevel int8
-				}
-			}
-		} `graphql:"(fullPath:$path)"`
-	}
-
-	variables := struct {
-		path string `graphql-type:"ID!"`
-	}{
-		path,
-	}
-
-	client.Query(&queryMembers, variables)
-
-	for index, member := range queryMembers.Project.ProjectMembers.Nodes {
-		color.Cyan.Println("Members:")
-		color.Green.Printf("(%d) %s(%s)\n", index, member.User.Name, member.User.Username)
 	}
 }

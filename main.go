@@ -3,7 +3,9 @@ package main
 import (
 	"log"
 	"os"
+	"path"
 
+	"github.com/gookit/color"
 	cli "github.com/urfave/cli/v2"
 	"gitlab.com/angel-afonso/gitlabcli/actions"
 	"gitlab.com/angel-afonso/gitlabcli/api"
@@ -16,6 +18,22 @@ func main() {
 	app := &cli.App{
 		Version: "0.0.1",
 		Commands: []*cli.Command{
+			{
+				Name: "logout",
+				Action: func(context *cli.Context) error {
+					executableDir, _ := os.Executable()
+
+					sessionDir := path.Join(path.Dir(executableDir), "session")
+
+					if _, err := os.Stat(sessionDir); os.IsNotExist(err) {
+						color.Red.Printf("Session does not exist\n")
+						return nil
+					}
+
+					os.Remove(sessionDir)
+					return nil
+				},
+			},
 			{
 				Name:        "project",
 				Description: "Project related commands",
@@ -30,6 +48,12 @@ func main() {
 						Description: "View project",
 						Usage:       "project view <path>",
 						Action:      actions.ProjectView(&client),
+					},
+					{
+						Name:        "members",
+						Description: "View project members",
+						Usage:       "project members <path>",
+						Action:      actions.ProjectMembers(&client),
 					},
 				},
 			},

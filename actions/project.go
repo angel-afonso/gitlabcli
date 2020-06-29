@@ -2,11 +2,12 @@ package actions
 
 import (
 	"fmt"
-	"log"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 	"gitlab.com/angel-afonso/gitlabcli/api"
 	"gitlab.com/angel-afonso/gitlabcli/utils"
+	"gopkg.in/gookit/color.v1"
 )
 
 // ProjectList send request to get user's project
@@ -37,19 +38,7 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 // ProjectView get and show data from a project by path
 func ProjectView(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
-		var path string
-
-		if utils.IsGitRepository() && context.Args().Len() == 0 {
-			remotes := utils.GetRemote()
-			if len(remotes) > 1 {
-				path = utils.GetRemotePath(utils.AskRemote(remotes))
-			}
-			path = utils.GetRemotePath(remotes[0])
-		} else if context.Args().Len() > 0 {
-			path = context.Args().First()
-		} else {
-			log.Fatal("Expected project path")
-		}
+		path := utils.GetPathParam(context)
 
 		var query struct {
 			Project struct {
@@ -71,4 +60,25 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 
 		return nil
 	}
+}
+
+// ProjectMembers show project members
+func ProjectMembers(client *api.Client) func(*cli.Context) error {
+	return func(context *cli.Context) error {
+		path := utils.GetPathParam(context)
+		for _, user := range getProjectMembers(client, path) {
+			color.FgGreen.Print(user.Name)
+			color.FgGreen.Printf(" (%s)\n", user.Username)
+			color.Reset()
+		}
+		color.Reset()
+		return nil
+	}
+}
+
+func getProjectMembers(client *api.Client, path string) []User {
+	var users []User
+
+	client.Get(fmt.Sprintf("projects/%s/users", strings.ReplaceAll(path, "/", "%2F")), &users)
+	return users
 }

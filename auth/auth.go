@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
+	"path"
 	"runtime"
 
 	"go.etcd.io/bbolt"
@@ -28,10 +30,13 @@ type Session struct {
 
 // OpenSession opens session database and returns session struct
 func OpenSession() *Session {
-	db, err := bbolt.Open("session", 0600, nil)
+	executableDir, _ := os.Executable()
+	db, err := bbolt.Open(path.Join(path.Dir(executableDir), "session"), 0600, nil)
+
 	if err != nil {
 		log.Fatal(err.Error())
 	}
+
 	session, err := lookUpSession(db)
 
 	if err != nil {

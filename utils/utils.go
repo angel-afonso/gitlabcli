@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/urfave/cli/v2"
 	"gopkg.in/gookit/color.v1"
 )
 
@@ -63,4 +64,23 @@ func GetRemotePath(remote string) string {
 	output, _ := cmd.Output()
 
 	return strings.TrimSpace(regexp.MustCompile(`https://.+[^.].com/|git@.+[^:]:|\.git`).ReplaceAllString(string(output), ""))
+}
+
+// GetPathParam find path repository in command line arg or in the directory
+func GetPathParam(context *cli.Context) string {
+	var path string
+
+	if IsGitRepository() && context.Args().Len() == 0 {
+		remotes := GetRemote()
+		if len(remotes) > 1 {
+			path = GetRemotePath(AskRemote(remotes))
+		}
+		path = GetRemotePath(remotes[0])
+	} else if context.Args().Len() > 0 {
+		path = context.Args().First()
+	} else {
+		log.Fatal("Expected project path")
+	}
+
+	return path
 }
