@@ -34,7 +34,7 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 			utils.Ternary(commit != nil, fmt.Sprintf(" (Default: %s)", commit.Message), "").(string),
 		)
 
-		color.Cyan.Print("Source Branch%s: ",
+		color.Cyan.Printf("Source Branch%s: ",
 			utils.Ternary(head != nil, fmt.Sprintf(" (Default: %s)", head.Name().Short()), ""),
 		)
 		source := utils.ReadLineOptional(
