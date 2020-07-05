@@ -14,6 +14,8 @@ import (
 // and print a table with projects
 func ProjectList(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
+		spinner := utils.ShowSpinner()
+
 		var query struct {
 			Projects struct {
 				Nodes []struct {
@@ -27,6 +29,8 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 
 		client.Query(&query, nil)
 
+		spinner.Stop()
+
 		for _, project := range query.Projects.Nodes {
 			fmt.Printf("ID: %s\nName: %s\nDescription: %s\nPath: %s\n\n", project.ID, project.Name, project.Description, project.FullPath)
 		}
@@ -38,6 +42,8 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 // ProjectView get and show data from a project by path
 func ProjectView(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
+		spinner := utils.ShowSpinner()
+
 		path := utils.GetPathParam(context)
 
 		var query struct {
@@ -56,6 +62,8 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 
 		client.Query(&query, variables)
 
+		spinner.Stop()
+
 		fmt.Printf("ID: %s\nName: %s\nDescription: %s\n\n", query.Project.ID, query.Project.Name, query.Project.Description)
 
 		return nil
@@ -66,7 +74,12 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 func ProjectMembers(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
 		path := utils.GetPathParam(context)
-		for _, user := range getProjectMembers(client, path) {
+		spinner := utils.ShowSpinner()
+
+		users := getProjectMembers(client, path)
+
+		spinner.Stop()
+		for _, user := range users {
 			color.FgGreen.Print(user.Name)
 			color.FgGreen.Printf(" (%s)\n", user.Username)
 			color.Reset()

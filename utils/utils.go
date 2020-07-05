@@ -8,7 +8,9 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
+	"time"
 
+	"github.com/briandowns/spinner"
 	"github.com/urfave/cli/v2"
 	"gopkg.in/gookit/color.v1"
 )
@@ -83,4 +85,11 @@ func GetPathParam(context *cli.Context) string {
 	}
 
 	return path
+}
+
+// ShowSpinner display and return spinner instance
+func ShowSpinner() *spinner.Spinner {
+	spinner := spinner.New(spinner.CharSets[32], 100*time.Millisecond)
+	spinner.Start()
+	return spinner
 }

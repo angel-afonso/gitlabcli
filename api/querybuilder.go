@@ -61,6 +61,7 @@ func formatMutation(query interface{}, vars interface{}) string {
 	q += parseQueryBody(query)
 
 	q += fmt.Sprintf(`}",%s}`, variables)
+	// fmt.Println(q)
 	return q
 }
 

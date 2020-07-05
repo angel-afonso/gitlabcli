@@ -12,6 +12,7 @@ import (
 	"path"
 	"runtime"
 
+	"gitlab.com/angel-afonso/gitlabcli/utils"
 	"go.etcd.io/bbolt"
 
 	color "gopkg.in/gookit/color.v1"
@@ -105,11 +106,12 @@ func login() map[string]string {
 	srv := &http.Server{Addr: "0.0.0.0:7890"}
 
 	var data map[string]string
+	spinner := utils.ShowSpinner()
 
 	openBrowser()
 
 	http.HandleFunc("/token", func(w http.ResponseWriter, r *http.Request) {
-
+		spinner.Stop()
 		err := json.NewDecoder(r.Body).Decode(&data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
@@ -163,9 +165,12 @@ func openBrowser() error {
 		cmd = "xdg-open"
 	}
 	args = append(args,
-		fmt.Sprintf("https://gitlab.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=token&state=%s&scope=api",
-			applicationid, callback, "asd"),
+		fmt.Sprintf("https://gitlab.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=token&scope=api",
+			applicationid, callback),
 	)
 
 	return exec.Command(cmd, args...).Start()
 }
+
+// fmt.Sprintf("https://gitlab.com/oauth/authorize?client_id=%s&redirect_uri=%s&response_type=token&state=%s&scope=api",
+// 	applicationid, callback, "asd"),

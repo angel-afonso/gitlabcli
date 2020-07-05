@@ -15,21 +15,7 @@ import (
 // by given project path
 func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
-
-		var path string
-
-		if utils.IsGitRepository() {
-			remotes := utils.GetRemote()
-			if len(remotes) > 1 {
-				path = utils.GetRemotePath(utils.AskRemote(remotes))
-			}
-			path = utils.GetRemotePath(remotes[0])
-
-		} else if context.Args().Len() > 0 {
-			path = context.Args().First()
-		} else {
-			log.Fatal("Expected project path")
-		}
+		path := utils.GetPathParam(context)
 
 		color.Cyan.Print("Merge request title: ")
 		title := utils.ReadLine()
@@ -39,6 +25,8 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 		target := utils.ReadLine()
 		color.Cyan.Print("Description: ")
 		description := utils.ReadLine()
+
+		spinner := utils.ShowSpinner()
 
 		var mutation struct {
 			MergeRequestCreate struct {
@@ -70,42 +58,100 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 			return nil
 		}
 
+		spinner.Stop()
+
 		color.Green.Printf("Created merge request !%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
 		color.Reset()
 
 		fmt.Print("Assign merge request? ")
-		color.Blue.Print("y/n")
+		color.Blue.Print("y/n ")
 		color.FgGray.Print("default: n")
 		color.Reset()
 
 		if choice := utils.ReadLine(); choice == "y" || choice == "yes" {
+			spinner.Start()
+
 			users := getProjectMembers(client, path)
+
+			spinner.Stop()
+
 			for index, user := range users {
 				color.Blue.Printf("%d ", index+1)
 				color.Green.Printf("%s (%s)\n", user.Name, user.Username)
 			}
 
 			index := utils.ReadInt()
-
-			var assignMutation struct {
-				MergeRequestSetAssignees struct {
-					Errors []string
-				} `graphql:"(input:{projectPath:$path,iid:$iid,assigneeUsernames:$usernames})"`
-			}
-
-			assignVariables := struct {
-				path      string   `graphql-type:"ID!"`
-				iid       string   `graphql-type:"String!"`
-				usernames []string `graphql-type:"[String!]!"`
-			}{
-				path:      path,
-				iid:       mutation.MergeRequestCreate.MergeRequest.Iid,
-				usernames: []string{users[index].Username},
-			}
-
-			client.Mutation(assignMutation, assignVariables)
+			assignUserForMergeRequest(client,
+				mutation.MergeRequestCreate.MergeRequest.Iid,
+				path,
+				[]string{users[index].Username},
+			)
 		}
 
 		return nil
 	}
+}
+
+// AssignMergeRequest interact with the graphql api to assign user to merge request
+func AssignMergeRequest(client *api.Client) func(*cli.Context) error {
+	return func(context *cli.Context) error {
+		spinner := utils.ShowSpinner()
+
+		path := utils.GetPathParam(context)
+
+		args := context.Args()
+
+		var iid string
+
+		if args.Len() > 1 {
+			iid = args.Get(2)
+		} else {
+			iid = args.Get(1)
+		}
+
+		if iid == "" {
+			log.Fatal("iid is required")
+		}
+
+		users := getProjectMembers(client, path)
+
+		spinner.Stop()
+
+		for index, user := range users {
+			color.Blue.Printf("%d ", index+1)
+			color.Green.Printf("%s (%s)\n", user.Name, user.Username)
+		}
+
+		index := utils.ReadInt()
+		assignUserForMergeRequest(client,
+			iid,
+			path,
+			[]string{users[index].Username},
+		)
+		return nil
+	}
+}
+
+func assignUserForMergeRequest(client *api.Client, iid string, path string, usernames []string) {
+	spinner := utils.ShowSpinner()
+
+	var assignMutation struct {
+		MergeRequestSetAssignees struct {
+			Errors []string
+		} `graphql:"(input:{projectPath:$path,iid:$iid,assigneeUsernames:$usernames})"`
+	}
+
+	assignVariables := struct {
+		path      string   `graphql-type:"ID!"`
+		iid       string   `graphql-type:"String!"`
+		usernames []string `graphql-type:"[String!]!"`
+	}{
+		path,
+		iid,
+		usernames,
+	}
+
+	client.Mutation(assignMutation, assignVariables)
+
+	spinner.Stop()
 }

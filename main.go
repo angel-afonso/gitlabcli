@@ -19,7 +19,9 @@ func main() {
 		Version: "0.0.1",
 		Commands: []*cli.Command{
 			{
-				Name: "logout",
+				Name:        "logout",
+				Description: "Remove current session",
+				Usage:       "logout",
 				Action: func(context *cli.Context) error {
 					executableDir, _ := os.Executable()
 
@@ -46,13 +48,13 @@ func main() {
 					{
 						Name:        "view",
 						Description: "View project",
-						Usage:       "project view <path>",
+						Usage:       "project view [path]",
 						Action:      actions.ProjectView(&client),
 					},
 					{
 						Name:        "members",
 						Description: "View project members",
-						Usage:       "project members <path>",
+						Usage:       "project members [path]",
 						Action:      actions.ProjectMembers(&client),
 					},
 				},
@@ -64,8 +66,14 @@ func main() {
 					{
 						Name:        "create",
 						Description: "Create new merge request",
-						Usage:       "mergerequest create [project path]",
+						Usage:       "mergerequest create [path]",
 						Action:      actions.CreateMergeRequest(&client),
+					},
+					{
+						Name:        "assign",
+						Description: "Assign user to existing merge request",
+						Usage:       "mergerequest assign [path] <iid>",
+						Action:      actions.AssignMergeRequest(&client),
 					},
 				},
 			},
