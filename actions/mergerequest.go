@@ -5,8 +5,10 @@ import (
 	"log"
 	"strings"
 
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gookit/color"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 	"gitlab.com/angel-afonso/gitlabcli/api"
 	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
@@ -17,12 +19,32 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
 		path := utils.GetPathParam(context)
 
-		color.Cyan.Print("Merge request title: ")
-		title := utils.ReadLine()
-		color.Cyan.Print("Source Branch: ")
-		source := utils.ReadLine()
-		color.Cyan.Print("Target Branch: ")
-		target := utils.ReadLine()
+		var head *plumbing.Reference
+		var commit *object.Commit
+
+		if context.Args().Len() == 0 {
+			head = utils.RepoHead()
+			commit = utils.RepoLastCommit()
+		}
+
+		color.Cyan.Printf("Merge request title%s: ",
+			utils.Ternary(commit != nil, fmt.Sprintf(" (Default: %s)", commit.Message), ""),
+		)
+		title := utils.ReadLineOptional(
+			utils.Ternary(commit != nil, fmt.Sprintf(" (Default: %s)", commit.Message), "").(string),
+		)
+
+		color.Cyan.Print("Source Branch%s: ",
+			utils.Ternary(head != nil, fmt.Sprintf(" (Default: %s)", head.Name().Short()), ""),
+		)
+		source := utils.ReadLineOptional(
+			utils.Ternary(head != nil, fmt.Sprintf(" (Default: %s)", head.Name().Short()), "").(string),
+		)
+
+		color.Cyan.Print("Target Branch (Default master): ")
+
+		target := utils.ReadLineOptional("master")
+
 		color.Cyan.Print("Description: ")
 		description := utils.ReadLine()
 
@@ -65,7 +87,7 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 
 		fmt.Print("Assign merge request? ")
 		color.Blue.Print("y/n ")
-		color.FgGray.Print("default: n")
+		color.FgGray.Print("default: n ")
 		color.Reset()
 
 		if choice := utils.ReadLine(); choice == "y" || choice == "yes" {

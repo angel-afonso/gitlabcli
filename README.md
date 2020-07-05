@@ -14,3 +14,6 @@ A Gitlab command line interface
   * ***members [path]*** Display project members 
 * ***mergerequest***: 
     * ***create [path]***: If the current directory is a git repository, create a merge request for the current project, if not, create a merge request for the given path
+    * ***assign [path] \<iid>***: Assign user to a merge request 
+
+### THIS IS NOT A GITLAB OFFICIAL PROJECT
