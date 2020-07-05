@@ -65,6 +65,26 @@ func TestFormatMutation(t *testing.T) {
 	assert.Equal(t, `{"query":"mutation($title:String!,$path:String!,){mergeRequestCreate(title:$title,projectPath:$path){mergeRequest{title,}}}","variables":{"title":"asd","path":"asd"}}`, q)
 }
 
+func TestFormatMutationWithArrayVar(t *testing.T) {
+	var query struct {
+		MergeRequestAssing struct {
+			MergeRequest struct {
+				Title string
+			}
+		} `graphql:"(title:$title,usernames:$usernames)"`
+	}
+	vars := struct {
+		Title     string   `graphql-type:"String!"`
+		Usernames []string `graphql-type:"[String!]!"`
+	}{
+		Title:     "asd",
+		Usernames: []string{`"asd"`},
+	}
+	q := formatMutation(query, vars)
+
+	assert.Equal(t, `{"query":"mutation($title:String!,$usernames:[String!]!,){mergeRequestAssing(title:$title,usernames:$usernames){mergeRequest{title,}}}","variables":{"title":"asd","usernames":["asd"]}}`, q)
+}
+
 func TestQueryWithVariables(t *testing.T) {
 	var query struct {
 		Projects struct {

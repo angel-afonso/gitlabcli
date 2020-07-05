@@ -81,10 +81,11 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 			}
 
 			index := utils.ReadInt()
+
 			assignUserForMergeRequest(client,
 				mutation.MergeRequestCreate.MergeRequest.Iid,
 				path,
-				[]string{users[index].Username},
+				[]string{`"` + users[index-1].Username + `"`},
 			)
 		}
 
@@ -104,9 +105,9 @@ func AssignMergeRequest(client *api.Client) func(*cli.Context) error {
 		var iid string
 
 		if args.Len() > 1 {
-			iid = args.Get(2)
-		} else {
 			iid = args.Get(1)
+		} else {
+			iid = args.Get(0)
 		}
 
 		if iid == "" {
@@ -123,10 +124,11 @@ func AssignMergeRequest(client *api.Client) func(*cli.Context) error {
 		}
 
 		index := utils.ReadInt()
+
 		assignUserForMergeRequest(client,
 			iid,
 			path,
-			[]string{users[index].Username},
+			[]string{`"` + users[index-1].Username + `"`},
 		)
 		return nil
 	}
@@ -137,7 +139,9 @@ func assignUserForMergeRequest(client *api.Client, iid string, path string, user
 
 	var assignMutation struct {
 		MergeRequestSetAssignees struct {
-			Errors []string
+			MergeRequest struct {
+				iid string
+			}
 		} `graphql:"(input:{projectPath:$path,iid:$iid,assigneeUsernames:$usernames})"`
 	}
 
@@ -146,12 +150,14 @@ func assignUserForMergeRequest(client *api.Client, iid string, path string, user
 		iid       string   `graphql-type:"String!"`
 		usernames []string `graphql-type:"[String!]!"`
 	}{
-		path,
-		iid,
-		usernames,
+		path:      path,
+		iid:       iid,
+		usernames: usernames,
 	}
 
-	client.Mutation(assignMutation, assignVariables)
+	client.Mutation(&assignMutation, assignVariables)
 
 	spinner.Stop()
+
+	color.Green.Printf("%s assigned to merge request !%s\n", usernames[0], iid)
 }

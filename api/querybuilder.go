@@ -61,7 +61,6 @@ func formatMutation(query interface{}, vars interface{}) string {
 	q += parseQueryBody(query)
 
 	q += fmt.Sprintf(`}",%s}`, variables)
-	// fmt.Println(q)
 	return q
 }
 
@@ -148,7 +147,6 @@ func parseVariables(vars interface{}) (string, string) {
 			value := structValue.Field(i)
 
 			name := fmt.Sprintf("%s%s", string(bytes.ToLower([]byte{field.Name[0]})), field.Name[1:])
-
 			q += fmt.Sprintf("$%s:", name)
 			variables += fmt.Sprintf(`"%s":`, name)
 
@@ -156,22 +154,17 @@ func parseVariables(vars interface{}) (string, string) {
 			var varValue string
 
 			switch value.Kind() {
-			case reflect.Int, reflect.Uint, reflect.Int8, reflect.Uint8, reflect.Int16, reflect.Uint16,
-				reflect.Int32, reflect.Uint32, reflect.Int64, reflect.Uint64:
-				varType = "Int,"
-				varValue = fmt.Sprintf("%d", value.Int())
+			case reflect.Array, reflect.Slice:
+				varType = fmt.Sprintf("[%s]", parseType(value.Kind()))
+				varValue = fmt.Sprintf("%v", value)
 				break
 			case reflect.String:
 				varType = "String,"
-				varValue = fmt.Sprintf(`"%s"`, value.String())
+				varValue = fmt.Sprintf(`"%s"`, value)
 				break
-			case reflect.Bool:
-				varType = "Boolean,"
-				varValue = fmt.Sprintf("%t", value.Bool())
-				break
-			case reflect.Float32, reflect.Float64:
-				varType = "Float,"
-				varValue = fmt.Sprintf("%f", value.Float())
+			default:
+				varType = parseType(value.Kind())
+				varValue = fmt.Sprintf("%v", value)
 				break
 			}
 
@@ -190,4 +183,23 @@ func parseVariables(vars interface{}) (string, string) {
 
 	variables += "}"
 	return q, variables
+}
+
+func parseArray(kind reflect.Kind) string {
+	return fmt.Sprintf("[%s]", parseType(kind))
+}
+
+func parseType(kind reflect.Kind) string {
+	switch kind {
+	case reflect.Int, reflect.Uint, reflect.Int8, reflect.Uint8, reflect.Int16, reflect.Uint16,
+		reflect.Int32, reflect.Uint32, reflect.Int64, reflect.Uint64:
+		return "Int,"
+	case reflect.String:
+		return "String,"
+	case reflect.Bool:
+		return "Boolean,"
+	case reflect.Float32, reflect.Float64:
+		return "Float,"
+	}
+	return ""
 }

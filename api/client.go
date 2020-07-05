@@ -22,7 +22,10 @@ type Client struct {
 }
 
 type wrapper struct {
-	Data interface{}
+	Data  interface{}
+	Error []struct {
+		Message string
+	}
 }
 
 // NewClient create new graphql client
@@ -36,6 +39,12 @@ func bindGraphqlResponse(body []byte, bind interface{}) {
 
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if len(response.Error) > 0 {
+		for _, err := range response.Error {
+			log.Fatal(err.Message)
+		}
 	}
 }
 
