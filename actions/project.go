@@ -42,10 +42,9 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 // ProjectView get and show data from a project by path
 func ProjectView(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
-		spinner := utils.ShowSpinner()
-
 		path := utils.GetPathParam(context)
 
+		spinner := utils.ShowSpinner()
 		var query struct {
 			Project struct {
 				ID          string `graphql-bind:"id"`
