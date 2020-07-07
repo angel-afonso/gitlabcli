@@ -22,8 +22,8 @@ type Client struct {
 }
 
 type wrapper struct {
-	Data  interface{}
-	Error []struct {
+	Data   interface{}
+	Errors []struct {
 		Message string
 	}
 }
@@ -41,8 +41,8 @@ func bindGraphqlResponse(body []byte, bind interface{}) {
 		log.Fatal(err)
 	}
 
-	if len(response.Error) > 0 {
-		for _, err := range response.Error {
+	if len(response.Errors) > 0 {
+		for _, err := range response.Errors {
 			log.Fatal(err.Message)
 		}
 	}

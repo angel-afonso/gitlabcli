@@ -33,11 +33,11 @@ func parseQueryBody(query interface{}) string {
 	body := ""
 	var structType reflect.Type
 
-	if reflect.TypeOf(query).Kind() == reflect.Ptr {
-		structType = reflect.TypeOf(query).Elem()
+	if refl := reflect.TypeOf(query); refl.Kind() == reflect.Ptr {
+		structType = refl.Elem()
 
 	} else {
-		structType = reflect.TypeOf(query)
+		structType = refl
 	}
 
 	for i := 0; i < structType.NumField(); i++ {
@@ -51,8 +51,7 @@ func formatMutation(query interface{}, vars interface{}) string {
 	q := `{"query":"`
 	variables := ""
 
-	var queryVars string
-	queryVars, variables = parseVariables(vars)
+	queryVars, variables := parseVariables(vars)
 
 	q += fmt.Sprintf("mutation(%s)", queryVars)
 
@@ -70,8 +69,7 @@ func formatQuery(query interface{}, vars interface{}) string {
 	q := `{"query":"`
 	variables := ""
 
-	var queryVars string
-	queryVars, variables = parseVariables(vars)
+	queryVars, variables := parseVariables(vars)
 
 	if vars != nil {
 		q += fmt.Sprintf("query(%s)", queryVars)
@@ -116,6 +114,7 @@ func parseFields(query reflect.StructField) string {
 			q += parseFields(field)
 		}
 		q += "}"
+
 		break
 	case reflect.Struct:
 		q += "{"
@@ -125,6 +124,7 @@ func parseFields(query reflect.StructField) string {
 		}
 		q += "}"
 		break
+
 	default:
 		q += ","
 		break

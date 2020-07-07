@@ -28,20 +28,22 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 		}
 
 		color.Cyan.Printf("Merge request title%s: ",
-			utils.Ternary(commit != nil, fmt.Sprintf(" (Default: %s)", commit.Message), ""),
+			utils.Ternary(commit != nil, color.LightBlue.Sprintf(" (Default: %s)", strings.TrimSpace(commit.Message)), ""),
 		)
 		title := utils.ReadLineOptional(
-			utils.Ternary(commit != nil, fmt.Sprintf(" (Default: %s)", commit.Message), "").(string),
+			utils.Ternary(commit != nil, strings.TrimSpace(commit.Message), "").(string),
 		)
 
 		color.Cyan.Printf("Source Branch%s: ",
-			utils.Ternary(head != nil, fmt.Sprintf(" (Default: %s)", head.Name().Short()), ""),
+			utils.Ternary(head != nil, color.LightBlue.Sprintf(" (Default: %s)", head.Name().Short()), ""),
 		)
 		source := utils.ReadLineOptional(
-			utils.Ternary(head != nil, fmt.Sprintf(" (Default: %s)", head.Name().Short()), "").(string),
+			utils.Ternary(head != nil, head.Name().Short(), "").(string),
 		)
 
-		color.Cyan.Print("Target Branch (Default master): ")
+		color.Cyan.Print("Target Branch ")
+		color.LightBlue.Print("(Default: master)")
+		color.White.Print(": ")
 
 		target := utils.ReadLineOptional("master")
 
@@ -82,12 +84,11 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 
 		spinner.Stop()
 
-		color.Green.Printf("Created merge request !%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
-		color.Reset()
+		color.LightGreen.Printf("Created merge request !%s\n", mutation.MergeRequestCreate.MergeRequest.Iid)
 
 		fmt.Print("Assign merge request? ")
 		color.Blue.Print("y/n ")
-		color.FgGray.Print("default: n ")
+		color.Gray.Print("default: n ")
 		color.Reset()
 
 		if choice := utils.ReadLine(); choice == "y" || choice == "yes" {
