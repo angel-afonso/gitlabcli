@@ -31,8 +31,16 @@ type Session struct {
 
 // OpenSession opens session database and returns session struct
 func OpenSession() *Session {
-	executableDir, _ := os.Executable()
-	db, err := bbolt.Open(path.Join(path.Dir(executableDir), "session"), 0600, nil)
+	homeDir, _ := os.UserHomeDir()
+	glPath := path.Join(homeDir, ".gitlabcli")
+
+	if _, err := os.Stat(glPath); os.IsNotExist(err) {
+		os.Mkdir(glPath, 0700)
+	} else if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	db, err := bbolt.Open(path.Join(glPath, "session"), 0600, nil)
 
 	if err != nil {
 		log.Fatal(err.Error())
