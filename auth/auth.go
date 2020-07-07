@@ -93,7 +93,7 @@ func storeToken(db *bbolt.DB, data map[string]string) *Session {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	color.Green.Light().Println("Login successful!")
+	color.Green.Light().Println("Login successful!\n")
 
 	return &Session{
 		Token: data["access_token"],
@@ -142,6 +142,7 @@ func login() map[string]string {
 			xhr.open('POST', 'http://localhost:7890/token', true);
 			xhr.setRequestHeader('Content-type', 'application/json');
 			xhr.send(JSON.stringify(getHashParams()));
+			
 			window.close();
 		</script>
 	`)

@@ -5,8 +5,10 @@ go 1.14
 require (
 	github.com/briandowns/spinner v1.11.1
 	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/eiannone/keyboard v0.0.0-20200508000154-caf4b762e807
 	github.com/go-git/go-git/v5 v5.1.0
 	github.com/gookit/color v1.2.5
+	github.com/olekukonko/tablewriter v0.0.4
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.2.0
 	go.etcd.io/bbolt v1.3.4

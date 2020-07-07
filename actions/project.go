@@ -2,13 +2,58 @@ package actions
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
+	"github.com/eiannone/keyboard"
 	"github.com/urfave/cli/v2"
 	"gitlab.com/angel-afonso/gitlabcli/api"
 	"gitlab.com/angel-afonso/gitlabcli/utils"
 	"gopkg.in/gookit/color.v1"
 )
+
+type projectList struct {
+	ID          string `graphql-bind:"id"`
+	Name        string
+	Description string
+	FullPath    string
+	StarCount   int
+}
+
+func (project *projectList) Print() {
+	reflVal := reflect.ValueOf(project).Elem()
+	reflType := reflect.TypeOf(project).Elem()
+
+	for i := 0; i < reflType.NumField(); i++ {
+		color.Cyan.Printf("%s: ", reflType.Field(i).Name)
+		color.Reset()
+		fmt.Println(reflVal.Field(i))
+	}
+}
+
+// Project struct
+type Project struct {
+	ID          string `graphql-bind:"id"`
+	Name        string
+	Description string
+	FullPath    string
+	StarCount   int
+	ForksCount  int
+	Visibility  string
+	CreatedAt   string
+}
+
+// Print project data
+func (project *Project) Print() {
+	reflVal := reflect.ValueOf(project).Elem()
+	reflType := reflect.TypeOf(project).Elem()
+
+	for i := 0; i < reflType.NumField(); i++ {
+		color.LightGreen.Printf("%s: ", reflType.Field(i).Name)
+		color.Reset()
+		fmt.Println(reflVal.Field(i))
+	}
+}
 
 // ProjectList send request to get user's project
 // and print a table with projects
@@ -18,24 +63,52 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 
 		var query struct {
 			Projects struct {
-				Nodes []struct {
-					ID          string `graphql-bind:"id"`
-					Name        string
-					Description string
-					FullPath    string
+				PageInfo struct {
+					EndCursor string
 				}
-			} `graphql:"(membership: true)"`
+				Nodes []projectList
+			} `graphql:"(membership: true, first: 10,after: $after)"`
 		}
 
-		client.Query(&query, nil)
-
-		spinner.Stop()
-
-		for _, project := range query.Projects.Nodes {
-			fmt.Printf("ID: %s\nName: %s\nDescription: %s\nPath: %s\n\n", project.ID, project.Name, project.Description, project.FullPath)
+		variables := struct {
+			after string
+		}{
+			after: "",
 		}
 
-		return nil
+		client.Query(&query, variables)
+
+		for {
+			spinner.Stop()
+			if len(query.Projects.Nodes) == 0 {
+				return nil
+			}
+
+			for _, project := range query.Projects.Nodes {
+				project.Print()
+				println()
+			}
+
+			if err := keyboard.Open(); err != nil {
+				panic(err)
+			}
+
+			defer keyboard.Close()
+
+			char, key, _ := keyboard.GetKey()
+
+			if char == 'q' || key == keyboard.KeyCtrlC || key == keyboard.KeyEsc {
+				println()
+				return nil
+			}
+
+			println()
+
+			variables.after = query.Projects.PageInfo.EndCursor
+			spinner.Start()
+
+			client.Query(&query, variables)
+		}
 	}
 }
 
@@ -46,11 +119,7 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 
 		spinner := utils.ShowSpinner()
 		var query struct {
-			Project struct {
-				ID          string `graphql-bind:"id"`
-				Description string
-				Name        string
-			} `graphql:"(fullPath:$path)"`
+			Project Project `graphql:"(fullPath:$path)"`
 		}
 
 		variables := struct {
@@ -63,7 +132,7 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 
 		spinner.Stop()
 
-		fmt.Printf("ID: %s\nName: %s\nDescription: %s\n\n", query.Project.ID, query.Project.Name, query.Project.Description)
+		query.Project.Print()
 
 		return nil
 	}
