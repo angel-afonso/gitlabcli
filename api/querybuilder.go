@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
-
-	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
 
 func graphqlReq(data *strings.Reader) *http.Request {
@@ -33,10 +31,14 @@ func (c *Client) Mutation(mutation interface{}, vars interface{}) {
 
 func parseQueryBody(query interface{}) string {
 	body := ""
+	var structType reflect.Type
 
-	refl := reflect.TypeOf(query)
+	if refl := reflect.TypeOf(query); refl.Kind() == reflect.Ptr {
+		structType = refl.Elem()
 
-	structType := utils.Ternary(refl.Kind() == reflect.Ptr, refl.Elem(), refl).(reflect.Type)
+	} else {
+		structType = refl
+	}
 
 	for i := 0; i < structType.NumField(); i++ {
 		body += parseFields(structType.Field(i))
@@ -47,14 +49,17 @@ func parseQueryBody(query interface{}) string {
 
 func formatMutation(query interface{}, vars interface{}) string {
 	q := `{"query":"`
+	variables := ""
 
 	queryVars, variables := parseVariables(vars)
 
 	q += fmt.Sprintf("mutation(%s)", queryVars)
-	q += "{"
-	q += parseQueryBody(query)
-	q += fmt.Sprintf(`}",%s}`, variables)
 
+	q += "{"
+
+	q += parseQueryBody(query)
+
+	q += fmt.Sprintf(`}",%s}`, variables)
 	return q
 }
 
@@ -62,6 +67,7 @@ func formatMutation(query interface{}, vars interface{}) string {
 // by stracting struct's fields
 func formatQuery(query interface{}, vars interface{}) string {
 	q := `{"query":"`
+	variables := ""
 
 	queryVars, variables := parseVariables(vars)
 
@@ -70,7 +76,9 @@ func formatQuery(query interface{}, vars interface{}) string {
 	}
 
 	q += "{"
+
 	q += parseQueryBody(query)
+
 	q += fmt.Sprintf(`}",%s}`, variables)
 	return q
 }

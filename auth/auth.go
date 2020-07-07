@@ -93,7 +93,9 @@ func storeToken(db *bbolt.DB, data map[string]string) *Session {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	color.Green.Light().Println("Login successful!\n")
+
+	color.Green.Light().Println("Login successful!")
+	println()
 
 	return &Session{
 		Token: data["access_token"],
