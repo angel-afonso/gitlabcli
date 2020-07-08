@@ -1,7 +1,7 @@
 package main
 
 import (
-	"log"
+	"fmt"
 	"os"
 	"path"
 
@@ -15,6 +15,8 @@ import (
 func main() {
 	client := api.NewClient(auth.OpenSession())
 
+	fmt.Println()
+
 	app := &cli.App{
 		Version: "0.0.1",
 		Commands: []*cli.Command{
@@ -23,16 +25,19 @@ func main() {
 				Description: "Remove current session",
 				Usage:       "logout",
 				Action: func(context *cli.Context) error {
-					executableDir, _ := os.Executable()
-
-					sessionDir := path.Join(path.Dir(executableDir), "session")
+					homeDir, _ := os.UserHomeDir()
+					sessionDir := path.Join(homeDir, ".gitlabcli", "session")
 
 					if _, err := os.Stat(sessionDir); os.IsNotExist(err) {
 						color.Red.Printf("Session does not exist\n")
 						return nil
 					}
 
-					os.Remove(sessionDir)
+					if err := os.Remove(sessionDir); err != nil {
+						color.Error.Println(err.Error)
+						os.Exit(1)
+					}
+					color.Success.Println("Logged out")
 					return nil
 				},
 			},
@@ -81,9 +86,12 @@ func main() {
 	}
 
 	app.EnableBashCompletion = true
-
 	err := app.Run(os.Args)
+
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
+
+	println()
 }

@@ -2,7 +2,6 @@ package actions
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/eiannone/keyboard"
@@ -13,36 +12,63 @@ import (
 )
 
 type projectList struct {
-	ID          string `graphql-bind:"id"`
-	Name        string
-	Description string
-	FullPath    string
-	StarCount   int
+	Name              string
+	Description       string
+	NameWithNamespace string
+	ForksCount        int
+	StarCount         int
+	Visibility        string
 }
 
 func (project *projectList) Print() {
-	reflVal := reflect.ValueOf(project).Elem()
-	reflType := reflect.TypeOf(project).Elem()
+	color.White.Println(color.Bold.Sprintf(project.NameWithNamespace))
+	fmt.Println(project.Name)
 
-	for i := 0; i < reflType.NumField(); i++ {
-		color.Cyan.Printf("%s: ", reflType.Field(i).Name)
-		color.Reset()
-		fmt.Println(reflVal.Field(i))
+	if project.Description != "" {
+		color.OpItalic.Println(project.Description)
 	}
+
+	color.OpItalic.Printf("Stars: %d Forks: %d\n", project.StarCount, project.ForksCount)
+	color.OpItalic.Println(project.Visibility)
+	println()
 }
 
 // Project struct
 type Project struct {
-	projectList `graphql:"inner"`
-	ForksCount  int
-	Visibility  string
-	CreatedAt   string
+	projectList     `graphql:"inner"`
+	CreatedAt       string
+	OpenIssuesCount int
+	SSHURLToRepo    string `graphql-bind:"sshUrlToRepo"`
+	HTTPURLToRepo   string `graphql-bind:"httpUrlToRepo"`
+	WebURL          string `graphql-bind:"webUrl"`
+	Releases        struct {
+		Nodes []struct {
+			Name string
+		}
+	} `graphql:"(last: 1)"`
 }
 
 // Print project data
 func (project *Project) Print() {
-	color.White.Printf("%s\n", color.Bold.Sprintf(project.FullPath))
-	fmt.Printf("%s\n", project.Description)
+	color.White.Println(color.Bold.Sprintf(project.NameWithNamespace))
+	fmt.Println(project.Name)
+	color.OpItalic.Println(project.Description)
+	color.OpItalic.Println(project.Visibility)
+	println()
+	color.OpUnderscore.Printf("Stars: %d Forks: %d\n", project.StarCount, project.ForksCount)
+	println()
+
+	if len(project.Releases.Nodes) > 0 {
+		color.OpItalic.Printf("Last Release: %s \n", project.Releases.Nodes[0].Name)
+		println()
+	}
+
+	fmt.Printf("Open issues: %d\n", project.OpenIssuesCount)
+	println()
+	fmt.Printf("HTTP URL: %s\n", color.OpItalic.Sprint(project.HTTPURLToRepo))
+	fmt.Printf("SSH URL: %s\n", color.OpItalic.Sprint(project.SSHURLToRepo))
+	println()
+	color.OpItalic.Println(color.Gray.Sprint(project.WebURL))
 }
 
 // ProjectList send request to get user's project
@@ -54,7 +80,8 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 		var query struct {
 			Projects struct {
 				PageInfo struct {
-					EndCursor string
+					EndCursor   string
+					HasNextPage bool
 				}
 				Nodes []projectList
 			} `graphql:"(membership: true, first: 10,after: $after)"`
@@ -70,13 +97,12 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 
 		for {
 			spinner.Stop()
-			if len(query.Projects.Nodes) == 0 {
-				return nil
-			}
-
 			for _, project := range query.Projects.Nodes {
 				project.Print()
-				println()
+			}
+
+			if !query.Projects.PageInfo.HasNextPage {
+				return nil
 			}
 
 			if err := keyboard.Open(); err != nil {
@@ -85,11 +111,17 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 
 			defer keyboard.Close()
 
-			char, key, _ := keyboard.GetKey()
+			for {
+				char, key, _ := keyboard.GetKey()
 
-			if char == 'q' || key == keyboard.KeyCtrlC || key == keyboard.KeyEsc {
-				println()
-				return nil
+				if key == keyboard.KeyEnter {
+					break
+				}
+
+				if char == 'q' || key == keyboard.KeyCtrlC || key == keyboard.KeyEsc {
+					println()
+					return nil
+				}
 			}
 
 			println()
@@ -108,8 +140,9 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 		path := utils.GetPathParam(context)
 
 		spinner := utils.ShowSpinner()
+
 		var query struct {
-			Project Project `graphql:"(fullPath:$path)"`
+			Project *Project `graphql:"(fullPath:$path)"`
 		}
 
 		variables := struct {
@@ -119,11 +152,14 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 		}
 
 		client.Query(&query, variables)
-
 		spinner.Stop()
 
-		query.Project.Print()
+		if query.Project != nil {
+			query.Project.Print()
+			return nil
+		}
 
+		color.Red.Println("An error has occurred, check the repository path and permissions")
 		return nil
 	}
 }

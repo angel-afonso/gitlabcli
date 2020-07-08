@@ -13,7 +13,7 @@ import (
 
 // graphqlReq generate request pointer
 func graphqlReq(data *strings.Reader) *http.Request {
-	req, err := http.NewRequest(get, graphql, data)
+	req, err := http.NewRequest(post, graphql, data)
 
 	if err != nil {
 		log.Fatal(err)
@@ -87,6 +87,9 @@ func parseField(field reflect.StructField) string {
 			q += ","
 			break
 		}
+		q += fmt.Sprintf("{%s}", parseInnerFields(field.Type.Elem()))
+		break
+	case reflect.Ptr:
 		q += fmt.Sprintf("{%s}", parseInnerFields(field.Type.Elem()))
 		break
 	case reflect.Struct:

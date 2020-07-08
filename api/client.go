@@ -6,8 +6,10 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"gitlab.com/angel-afonso/gitlabcli/auth"
+	"gopkg.in/gookit/color.v1"
 )
 
 const (
@@ -41,7 +43,8 @@ func bindGraphqlResponse(body []byte, bind interface{}) {
 	err := json.Unmarshal(body, &response)
 
 	if err != nil {
-		log.Fatal(err)
+		color.Red.Printf("\n%s\n", err.Error())
+		os.Exit(1)
 	}
 
 	if len(response.Errors) > 0 {
