@@ -14,6 +14,9 @@ const (
 	url     = "https://gitlab.com/api/graphql"
 	graphql = "https://gitlab.com/api/graphql"
 	rest    = "https://gitlab.com/api/v4"
+
+	get  = "GET"
+	post = "POST"
 )
 
 // Client graphql client

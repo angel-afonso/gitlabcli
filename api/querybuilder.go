@@ -7,10 +7,13 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+
+	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
 
+// graphqlReq generate request pointer
 func graphqlReq(data *strings.Reader) *http.Request {
-	req, err := http.NewRequest("POST", graphql, data)
+	req, err := http.NewRequest(get, graphql, data)
 
 	if err != nil {
 		log.Fatal(err)
@@ -29,100 +32,65 @@ func (c *Client) Mutation(mutation interface{}, vars interface{}) {
 	bindGraphqlResponse(c.send(graphqlReq(strings.NewReader(formatMutation(mutation, vars)))), mutation)
 }
 
-func parseQueryBody(query interface{}) string {
-	body := ""
+// generateQueryBody format a string as a graphql query body
+func generateQueryBody(query interface{}) string {
 	var structType reflect.Type
 
 	if refl := reflect.TypeOf(query); refl.Kind() == reflect.Ptr {
 		structType = refl.Elem()
-
 	} else {
 		structType = refl
 	}
 
-	for i := 0; i < structType.NumField(); i++ {
-		body += parseFields(structType.Field(i))
-	}
-
-	return body
+	return parseInnerFields(structType)
 }
 
-func formatMutation(query interface{}, vars interface{}) string {
-	q := `{"query":"`
-	variables := ""
+// formatMutation format a string as a graphql mutation
+func formatMutation(mutation interface{}, vars interface{}) string {
+	queryVars, variables := formatVariables(vars)
 
-	queryVars, variables := parseVariables(vars)
-
-	q += fmt.Sprintf("mutation(%s)", queryVars)
-
-	q += "{"
-
-	q += parseQueryBody(query)
-
-	q += fmt.Sprintf(`}",%s}`, variables)
-	return q
+	return fmt.Sprintf(`{"query":"%s{%s}",%s}`,
+		fmt.Sprintf("mutation(%s)", queryVars),
+		generateQueryBody(mutation), variables)
 }
 
-// formatQuery returns a formated graphql query
-// by stracting struct's fields
+// formatQuery returns a formated graphql query by stracting struct's fields
 func formatQuery(query interface{}, vars interface{}) string {
-	q := `{"query":"`
-	variables := ""
+	queryVars, variables := formatVariables(vars)
 
-	queryVars, variables := parseVariables(vars)
-
-	if vars != nil {
-		q += fmt.Sprintf("query(%s)", queryVars)
-	}
-
-	q += "{"
-
-	q += parseQueryBody(query)
-
-	q += fmt.Sprintf(`}",%s}`, variables)
-	return q
+	return fmt.Sprintf(`{"query":"%s{%s}",%s}`,
+		utils.Ternary(vars != nil, fmt.Sprintf("query(%s)", queryVars), ""),
+		generateQueryBody(query), variables)
 }
 
-// parseFields parse struct fields and generate the graphql query
-func parseFields(query reflect.StructField) string {
+// parseField parse struct fields and generate the graphql query
+func parseField(field reflect.StructField) string {
 	q := ""
 
-	if tag := query.Tag.Get("graphql"); tag == "-" {
+	switch tag := field.Tag.Get("graphql"); tag {
+	case "inner":
+		return parseInnerFields(field.Type)
+	case "-":
 		return q
+	default:
+		if bind, ok := field.Tag.Lookup("graphql-bind"); ok {
+			q += bind
+		} else {
+			q += fmt.Sprintf("%s%s", string(bytes.ToLower([]byte{field.Name[0]})), field.Name[1:])
+		}
+		q += tag
 	}
 
-	if bind, ok := query.Tag.Lookup("graphql-bind"); ok {
-		q += bind
-	} else {
-		q += fmt.Sprintf("%s%s", string(bytes.ToLower([]byte{query.Name[0]})), query.Name[1:])
-	}
-
-	if params, ok := query.Tag.Lookup("graphql"); ok {
-		q += params
-	}
-
-	switch query.Type.Kind() {
+	switch field.Type.Kind() {
 	case reflect.Slice:
-		if query.Type.Elem().Kind() != reflect.Struct {
+		if field.Type.Elem().Kind() != reflect.Struct {
 			q += ","
 			break
 		}
-
-		q += "{"
-		for i := 0; i < query.Type.Elem().NumField(); i++ {
-			field := query.Type.Elem().Field(i)
-			q += parseFields(field)
-		}
-		q += "}"
-
+		q += fmt.Sprintf("{%s}", parseInnerFields(field.Type.Elem()))
 		break
 	case reflect.Struct:
-		q += "{"
-		for i := 0; i < query.Type.NumField(); i++ {
-			field := query.Type.Field(i)
-			q += parseFields(field)
-		}
-		q += "}"
+		q += fmt.Sprintf("{%s}", parseInnerFields(field.Type))
 		break
 
 	default:
@@ -133,7 +101,16 @@ func parseFields(query reflect.StructField) string {
 	return q
 }
 
-func parseVariables(vars interface{}) (string, string) {
+// parseInnerFields parse fields inside a strut field
+func parseInnerFields(field reflect.Type) string {
+	parsed := ""
+	for i := 0; i < field.NumField(); i++ {
+		parsed += parseField(field.Field(i))
+	}
+	return parsed
+}
+
+func formatVariables(vars interface{}) (string, string) {
 	q := ""
 	variables := `"variables":{`
 
@@ -147,6 +124,7 @@ func parseVariables(vars interface{}) (string, string) {
 			value := structValue.Field(i)
 
 			name := fmt.Sprintf("%s%s", string(bytes.ToLower([]byte{field.Name[0]})), field.Name[1:])
+
 			q += fmt.Sprintf("$%s:", name)
 			variables += fmt.Sprintf(`"%s":`, name)
 

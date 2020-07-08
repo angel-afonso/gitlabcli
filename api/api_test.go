@@ -24,7 +24,7 @@ func TestParseFields(t *testing.T) {
 
 	for i := 0; i < structType.NumField(); i++ {
 		field := structType.Field(i)
-		q += parseFields(field)
+		q += parseField(field)
 	}
 	q += "}"
 
@@ -43,6 +43,26 @@ func TestFormatQuery(t *testing.T) {
 	q := formatQuery(query, nil)
 
 	assert.Equal(t, `{"query":"{projects(membership: true){nodes{name,}}}","variables":{}}`, q)
+}
+
+func TestFormatQueryWithComposition(t *testing.T) {
+	type composition struct {
+		Name     string
+		Lastname string
+	}
+
+	var query struct {
+		Projects struct {
+			Nodes []struct {
+				composition   `graphql:"inner"`
+				NoComposition int
+			}
+		} `graphql:"(membership: true)"`
+	}
+
+	q := formatQuery(query, nil)
+
+	assert.Equal(t, `{"query":"{projects(membership: true){nodes{name,lastname,noComposition,}}}","variables":{}}`, q)
 }
 
 func TestFormatMutation(t *testing.T) {
