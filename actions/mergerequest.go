@@ -27,27 +27,39 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 			commit = utils.RepoLastCommit()
 		}
 
-		color.Cyan.Printf("Merge request title%s: ",
-			utils.Ternary(commit != nil, color.LightBlue.Sprintf(" (Default: %s)", strings.TrimSpace(commit.Message)), ""),
-		)
+		color.Bold.Print("Merge request title ")
+		color.Reset()
+
+		if commit != nil {
+			color.LightBlue.Printf(" (Default: %s)", strings.TrimSpace(commit.Message))
+		}
+
+		color.White.Print(": ")
 		title := utils.ReadLineOptional(
 			utils.Ternary(commit != nil, strings.TrimSpace(commit.Message), "").(string),
 		)
 
-		color.Cyan.Printf("Source Branch%s: ",
-			utils.Ternary(head != nil, color.LightBlue.Sprintf(" (Default: %s)", head.Name().Short()), ""),
-		)
+		color.Bold.Print("Source Branch ")
+		color.Reset()
+
+		if head != nil {
+			color.LightBlue.Printf(" (Default: %s)", head.Name().Short())
+		}
+
+		color.White.Print(": ")
 		source := utils.ReadLineOptional(
 			utils.Ternary(head != nil, head.Name().Short(), "").(string),
 		)
 
-		color.Cyan.Print("Target Branch ")
+		color.Bold.Print("Target Branch ")
+		color.Reset()
 		color.LightBlue.Print("(Default: master)")
 		color.White.Print(": ")
 
 		target := utils.ReadLineOptional("master")
 
-		color.Cyan.Print("Description: ")
+		color.Bold.Print("Description: ")
+		color.Reset()
 		description := utils.ReadLine()
 
 		spinner := utils.ShowSpinner()
