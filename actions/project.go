@@ -33,11 +33,7 @@ func (project *projectList) Print() {
 
 // Project struct
 type Project struct {
-	ID          string `graphql-bind:"id"`
-	Name        string
-	Description string
-	FullPath    string
-	StarCount   int
+	projectList `graphql:"inner"`
 	ForksCount  int
 	Visibility  string
 	CreatedAt   string
@@ -45,14 +41,8 @@ type Project struct {
 
 // Print project data
 func (project *Project) Print() {
-	reflVal := reflect.ValueOf(project).Elem()
-	reflType := reflect.TypeOf(project).Elem()
-
-	for i := 0; i < reflType.NumField(); i++ {
-		color.LightGreen.Printf("%s: ", reflType.Field(i).Name)
-		color.Reset()
-		fmt.Println(reflVal.Field(i))
-	}
+	color.White.Printf("%s\n", color.Bold.Sprintf(project.FullPath))
+	fmt.Printf("%s\n", project.Description)
 }
 
 // ProjectList send request to get user's project
