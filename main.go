@@ -18,12 +18,16 @@ func main() {
 	fmt.Println()
 
 	app := &cli.App{
-		Version: "0.0.1",
+		Name:        "gitlabcli",
+		Usage:       "Gitlab CLI",
+		Version:     "0.1.1",
+		Description: "Command line interface to interact with the gitlab API",
 		Commands: []*cli.Command{
 			{
 				Name:        "logout",
 				Description: "Remove current session",
-				Usage:       "logout",
+				Usage:       "Remove session",
+				UsageText:   "gitlabcli logout",
 				Action: func(context *cli.Context) error {
 					homeDir, _ := os.UserHomeDir()
 					sessionDir := path.Join(homeDir, ".gitlabcli", "session")
@@ -43,11 +47,14 @@ func main() {
 			},
 			{
 				Name:        "project",
+				Usage:       "Gitlab Project",
 				Description: "Project related commands",
 				Subcommands: []*cli.Command{
 					{
 						Name:        "list",
-						Description: "List projects",
+						UsageText:   "gitlabcli project list",
+						Usage:       "List projects",
+						Description: "Display a list with user's project",
 						Action:      actions.ProjectList(&client),
 					},
 					{
@@ -66,18 +73,21 @@ func main() {
 			},
 			{
 				Name:        "mergerequest",
+				Usage:       "Gitlab merge request",
 				Description: "Merge Request related commands",
 				Subcommands: []*cli.Command{
 					{
 						Name:        "create",
-						Description: "Create new merge request",
-						Usage:       "mergerequest create [path]",
+						Usage:       "Create new merge request",
+						Description: "Create new merge request. Path is optional if the current directory is a git repository with remote in gitlab",
+						UsageText:   "gitlabcli mergerequest create [path]",
 						Action:      actions.CreateMergeRequest(&client),
 					},
 					{
 						Name:        "assign",
-						Description: "Assign user to existing merge request",
-						Usage:       "mergerequest assign [path] <iid>",
+						Description: "Assign user to existing merge request. Path is optional if the current directory is a git repository with remote in gitlab",
+						Usage:       "Assign user to a merge request",
+						UsageText:   "gitlabcli mergerequest assign [path] <iid>",
 						Action:      actions.AssignMergeRequest(&client),
 					},
 				},

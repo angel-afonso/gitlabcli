@@ -133,28 +133,33 @@ func login() map[string]string {
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `
-		<script>
-			function getHashParams() {
-				var hashParams = {};
-				var e,
-					a = /\+/g,  // Regex for replacing addition symbol with a space
-					r = /([^&;=]+)=?([^&;]*)/g,
-					d = function (s) { return decodeURIComponent(s.replace(a, " ")); },
-					q = window.location.hash.substring(1);
+		<html>
+			<head></head>
+			<body>
+				<script>
+					function getHashParams() {
+						var hashParams = {};
+						var e,
+							a = /\+/g,  // Regex for replacing addition symbol with a space
+							r = /([^&;=]+)=?([^&;]*)/g,
+							d = function (s) { return decodeURIComponent(s.replace(a, " ")); },
+							q = window.location.hash.substring(1);
 
-				while (e = r.exec(q))
-				hashParams[d(e[1])] = d(e[2]);
+						while (e = r.exec(q))
+						hashParams[d(e[1])] = d(e[2]);
 
-				return hashParams;
-			}
+						return hashParams;
+					}
 
-			var xhr = new XMLHttpRequest();
-			xhr.open('POST', 'http://localhost:7890/token', true);
-			xhr.setRequestHeader('Content-type', 'application/json');
-			xhr.send(JSON.stringify(getHashParams()));
-			
-			window.close();
-		</script>
+					var xhr = new XMLHttpRequest();
+					xhr.open('POST', 'http://localhost:7890/token', true);
+					xhr.setRequestHeader('Content-type', 'application/json');
+					xhr.send(JSON.stringify(getHashParams()));
+					
+					window.close();
+				</script>
+			</body>
+		</html>
 	`)
 	})
 
