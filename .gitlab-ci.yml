@@ -1,32 +1,54 @@
-image: golang:latest
-
-include:
-  - template: Dependency-Scanning.gitlab-ci.yml
-
-variables:
-  REPO_NAME: gitlab.com/angel-afonso/gitlabcli
-
-before_script:
-  - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
-  - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
-  - cd $GOPATH/src/$REPO_NAME
-
 stages:
   - test
-#  - build
-#  - deploy
+  - release
+
+include:
+    - template: Dependency-Scanning.gitlab-ci.yml
 
 test:
-  stage: test
-  script:
-    - go fmt $(go list ./... | grep -v /vendor/)
-    - go vet $(go list ./... | grep -v /vendor/)
-    - go test -race $(go list ./... | grep -v /vendor/) -v -coverprofile fmt
+    stage: test
+    image: golang:latest
+    variables:
+        REPO_NAME: gitlab.com/angel-afonso/gitlabcli
+    before_script:
+        - mkdir -p $GOPATH/src/$(dirname $REPO_NAME)
+        - ln -svf $CI_PROJECT_DIR $GOPATH/src/$REPO_NAME
+        - cd $GOPATH/src/$REPO_NAME
+    script:
+    script:                                                                                                                            
+        - go fmt $(go list ./... | grep -v /vendor-)                                                                                            
+        - go vet $(go list ./... | grep -v /vendor/)                                                                                            
+        - go test -race $(go list ./... | grep -v /vendor/) -v -coverprofile fmt    
+        
 
-#compile:
-#  stage: build
-#  script:
-#    - go build -race -ldflags "-extldflags '-static'" -o $CI_PROJECT_DIR/mybinary
-#  artifacts:
-#    paths:
-#      - mybinary
+release:
+  stage: release
+  image: docker:stable
+  services:
+    - docker:dind
+
+  variables:
+    GORELEASER_IMAGE: goreleaser/goreleaser:latest
+ 
+    DOCKER_REGISTRY: $CI_REGISTRY
+    DOCKER_USERNAME: $CI_REGISTRY_USER
+    DOCKER_PASSWORD: $CI_REGISTRY_PASSWORD
+
+    GIT_DEPTH: 0
+ 
+  only:
+    refs:
+      - tags
+
+  script: |
+    docker pull $GORELEASER_IMAGE
+
+    # GITLAB_TOKEN is needed to create GitLab releases.
+    # DOCKER_* are needed to push Docker images.
+    docker run --pull --rm --privileged \
+      -v $PWD:/go/src/gitlab.com/angel-afonso/gitlabcli \
+      -w /go/src/gitlab.com/angel-afonso/gitlabcli \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -e DOCKER_USERNAME -e DOCKER_PASSWORD -e DOCKER_REGISTRY  \
+      -e GITLAB_TOKEN \
+      $GORELEASER_IMAGE release --rm-dist

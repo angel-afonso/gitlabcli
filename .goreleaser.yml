@@ -2,16 +2,12 @@ project_name: gitlabcli
 
 release:
   prerelease: auto
-  draft: true
 
 # This is an example goreleaser.yaml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod download
-    # you may remove this if you don't need go generate
-    - go generate ./...
 builds:
 - 
   env:
@@ -38,3 +34,9 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
+
+dockers:
+  - image_templates:
+    - "registry.gitlab.com/angel-afonso/gitlabcli:latest"
+    - "registry.gitlab.com/angel-afonso/gitlabcli:{{ .Tag }}"
+    - "registry.gitlab.com/angel-afonso/gitlabcli:v{{ .Major }}"
