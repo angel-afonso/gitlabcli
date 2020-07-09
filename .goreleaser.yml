@@ -34,9 +34,3 @@ changelog:
     exclude:
     - '^docs:'
     - '^test:'
-
-dockers:
-  - image_templates:
-    - "registry.gitlab.com/angel-afonso/gitlabcli:latest"
-    - "registry.gitlab.com/angel-afonso/gitlabcli:{{ .Tag }}"
-    - "registry.gitlab.com/angel-afonso/gitlabcli:v{{ .Major }}"
