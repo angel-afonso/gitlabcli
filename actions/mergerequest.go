@@ -2,7 +2,7 @@ package actions
 
 import (
 	"fmt"
-	"log"
+	"os"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -146,7 +146,8 @@ func AssignMergeRequest(client *api.Client) func(*cli.Context) error {
 		}
 
 		if iid == "" {
-			log.Fatal("iid is required")
+			color.Red.Println("iid is required")
+			os.Exit(1)
 		}
 
 		users := getProjectMembers(client, path)

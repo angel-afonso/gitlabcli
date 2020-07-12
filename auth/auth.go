@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -37,13 +36,15 @@ func OpenSession() *Session {
 	if _, err := os.Stat(glPath); os.IsNotExist(err) {
 		os.Mkdir(glPath, 0700)
 	} else if err != nil {
-		log.Fatal(err.Error())
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	db, err := bbolt.Open(path.Join(glPath, "session"), 0600, nil)
 
 	if err != nil {
-		log.Fatal(err.Error())
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	session, err := lookUpSession(db)
@@ -89,7 +90,8 @@ func storeToken(db *bbolt.DB, data map[string]string) *Session {
 	err := db.Update(func(tx *bbolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists([]byte("session"))
 		if err != nil {
-			log.Fatal(err.Error())
+			color.Red.Println(err.Error())
+			os.Exit(1)
 		}
 
 		err = bucket.Put([]byte("access_token"), []byte(data["access_token"]))
@@ -99,7 +101,8 @@ func storeToken(db *bbolt.DB, data map[string]string) *Session {
 	})
 
 	if err != nil {
-		log.Fatal(err.Error())
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	color.Green.Light().Println("Login successful!")

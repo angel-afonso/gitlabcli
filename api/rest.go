@@ -3,15 +3,18 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
+
+	"gopkg.in/gookit/color.v1"
 )
 
 func restReq(method string, path string, data []byte) *http.Request {
 	req, err := http.NewRequest(method, fmt.Sprintf("%s/%s", rest, path), bytes.NewBuffer(data))
 
 	if err != nil {
-		log.Fatal(err)
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	return req

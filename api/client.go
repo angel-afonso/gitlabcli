@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 
@@ -49,7 +48,8 @@ func bindGraphqlResponse(body []byte, bind interface{}) {
 
 	if len(response.Errors) > 0 {
 		for _, err := range response.Errors {
-			log.Fatal(err.Message)
+			color.Red.Println(err.Message)
+			os.Exit(1)
 		}
 	}
 }
@@ -59,7 +59,8 @@ func bindRestResponse(body []byte, bind interface{}) {
 	err := json.Unmarshal(body, &response)
 
 	if err != nil {
-		log.Fatal(err)
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 }
 
@@ -71,14 +72,16 @@ func (c *Client) send(req *http.Request) []byte {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		log.Fatal(err)
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		log.Fatal(err)
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	return body

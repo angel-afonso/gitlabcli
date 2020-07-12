@@ -3,12 +3,13 @@ package api
 import (
 	"bytes"
 	"fmt"
-	"log"
 	"net/http"
+	"os"
 	"reflect"
 	"strings"
 
 	"gitlab.com/angel-afonso/gitlabcli/utils"
+	"gopkg.in/gookit/color.v1"
 )
 
 // graphqlReq generate request pointer
@@ -16,7 +17,8 @@ func graphqlReq(data *strings.Reader) *http.Request {
 	req, err := http.NewRequest(post, graphql, data)
 
 	if err != nil {
-		log.Fatal(err)
+		color.Red.Println(err.Error())
+		os.Exit(1)
 	}
 
 	return req

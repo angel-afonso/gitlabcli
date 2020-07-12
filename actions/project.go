@@ -18,11 +18,13 @@ type projectList struct {
 	ForksCount        int
 	StarCount         int
 	Visibility        string
+	FullPath          string
 }
 
 func (project *projectList) Print() {
-	color.White.Println(color.Bold.Sprintf(project.NameWithNamespace))
+	fmt.Println(color.Bold.Sprintf(project.NameWithNamespace))
 	fmt.Println(project.Name)
+	fmt.Println(project.FullPath)
 
 	if project.Description != "" {
 		color.OpItalic.Println(project.Description)
@@ -45,7 +47,14 @@ type Project struct {
 		Nodes []struct {
 			Name string
 		}
-	} `graphql:"(last: 1)"`
+	} `graphql:"(first: 1)"`
+	Pipelines struct {
+		Nodes []struct {
+			DetailedStatus struct {
+				Label string
+			}
+		}
+	} `graphql:"(first: 1, ref: \\\"master\\\")"`
 }
 
 // Print project data
@@ -56,7 +65,12 @@ func (project *Project) Print() {
 	color.OpItalic.Println(project.Visibility)
 	println()
 	color.OpUnderscore.Printf("Stars: %d Forks: %d\n", project.StarCount, project.ForksCount)
-	println()
+
+	if len(project.Pipelines.Nodes) > 0 {
+		println()
+		color.OpItalic.Printf("Pipeline status: %s \n", color.Bold.Sprint(project.Pipelines.Nodes[0].DetailedStatus.Label))
+		println()
+	}
 
 	if len(project.Releases.Nodes) > 0 {
 		color.OpItalic.Printf("Last Release: %s \n", project.Releases.Nodes[0].Name)

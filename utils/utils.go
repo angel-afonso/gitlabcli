@@ -3,7 +3,6 @@ package utils
 import (
 	"bufio"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 	"regexp"
@@ -93,7 +92,8 @@ func AskRemote(remotes []*git.Remote) string {
 	index := ReadInt()
 
 	if index > len(remotes)-1 {
-		log.Fatal("Invalid index")
+		color.Red.Println("Invalid index")
+		os.Exit(1)
 	}
 
 	return remotes[index].Config().Name
@@ -159,7 +159,8 @@ func GetPathParam(context *cli.Context) string {
 	} else if context.Args().Len() > 0 {
 		path = context.Args().First()
 	} else {
-		log.Fatal("Expected project path")
+		color.Red.Println("Expected project path")
+		os.Exit(1)
 	}
 
 	return path
