@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -107,7 +108,9 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 			after: "",
 		}
 
-		client.Query(&query, variables)
+		if err := client.Query(&query, variables); err != nil {
+			return err
+		}
 
 		for {
 			spinner.Stop()
@@ -120,7 +123,7 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 			}
 
 			if err := keyboard.Open(); err != nil {
-				panic(err)
+				return err
 			}
 
 			defer keyboard.Close()
@@ -151,7 +154,11 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 // ProjectView get and show data from a project by path
 func ProjectView(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
-		path := utils.GetPathParam(context)
+		path, err := utils.GetPathParam(context)
+
+		if err != nil {
+			return err
+		}
 
 		spinner := utils.ShowSpinner()
 
@@ -165,7 +172,10 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 			path,
 		}
 
-		client.Query(&query, variables)
+		if err := client.Query(&query, variables); err != nil {
+			return err
+		}
+
 		spinner.Stop()
 
 		if query.Project != nil {
@@ -173,15 +183,19 @@ func ProjectView(client *api.Client) func(*cli.Context) error {
 			return nil
 		}
 
-		color.Red.Println("An error has occurred, check the repository path and permissions")
-		return nil
+		return errors.New("An error has occurred, check the repository path and permissions")
 	}
 }
 
 // ProjectMembers show project members
 func ProjectMembers(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
-		path := utils.GetPathParam(context)
+		path, err := utils.GetPathParam(context)
+
+		if err != nil {
+			return err
+		}
+
 		spinner := utils.ShowSpinner()
 
 		users := getProjectMembers(client, path)

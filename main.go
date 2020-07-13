@@ -20,7 +20,7 @@ func main() {
 	app := &cli.App{
 		Name:        "gitlabcli",
 		Usage:       "Gitlab CLI",
-		Version:     "0.1.1",
+		Version:     "0.1.2",
 		Description: "Command line interface to interact with the gitlab API",
 		Commands: []*cli.Command{
 			{
@@ -38,8 +38,7 @@ func main() {
 					}
 
 					if err := os.Remove(sessionDir); err != nil {
-						color.Error.Println(err.Error)
-						os.Exit(1)
+						return err
 					}
 					color.Success.Println("Logged out")
 					return nil
@@ -47,7 +46,7 @@ func main() {
 			},
 			{
 				Name:        "project",
-				Usage:       "Gitlab Project",
+				Usage:       "Handle Gitlab project",
 				Description: "Project related commands",
 				Subcommands: []*cli.Command{
 					{
@@ -73,7 +72,7 @@ func main() {
 			},
 			{
 				Name:        "mergerequest",
-				Usage:       "Gitlab merge request",
+				Usage:       "Handle merge request",
 				Description: "Merge Request related commands",
 				Subcommands: []*cli.Command{
 					{
@@ -92,6 +91,43 @@ func main() {
 					},
 				},
 			},
+			{
+				Name:        "issue",
+				Usage:       "Handle project issues",
+				Description: "Issues related commands",
+				Subcommands: []*cli.Command{
+					{
+						Name:        "list",
+						Usage:       "List project issues",
+						Description: "Display a issue list. Path is optional if the current directory is a git repository with remote in gitlab",
+						UsageText:   "gitlabcli issue list [path]",
+						Action:      actions.IssuesList(&client),
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:        "opened",
+								Value:       false,
+								Usage:       "Display only opened issues",
+								Aliases:     []string{"o"},
+								Destination: &actions.Opened,
+							},
+							&cli.BoolFlag{
+								Name:        "cloed",
+								Value:       false,
+								Usage:       "Display only closed issues",
+								Aliases:     []string{"c"},
+								Destination: &actions.Closed,
+							},
+						},
+					},
+					{
+						Name:        "view",
+						Usage:       "View project issue",
+						Description: "Display a specific issue. Path is optional if the current directory is a git repository with remote in gitlab",
+						UsageText:   "gitlabcli issue view [path] <iid>",
+						Action:      actions.ShowIssue(&client),
+					},
+				},
+			},
 		},
 	}
 
@@ -99,8 +135,7 @@ func main() {
 	err := app.Run(os.Args)
 
 	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
+		color.Red.Println(err.Error())
 	}
 
 	println()

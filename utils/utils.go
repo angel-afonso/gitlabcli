@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -91,12 +92,14 @@ func AskRemote(remotes []*git.Remote) string {
 
 	index := ReadInt()
 
-	if index > len(remotes)-1 {
-		color.Red.Println("Invalid index")
-		os.Exit(1)
-	}
+	for {
+		if index > len(remotes)-1 {
+			color.Red.Println("Invalid index")
+			continue
+		}
 
-	return remotes[index].Config().Name
+		return remotes[index].Config().Name
+	}
 }
 
 // GetRemotePath returns a string with the repo path for the given remote repository
@@ -142,7 +145,7 @@ func RepoLastCommit() *object.Commit {
 }
 
 // GetPathParam find path repository in command line arg or in the directory
-func GetPathParam(context *cli.Context) string {
+func GetPathParam(context *cli.Context) (string, error) {
 	var path string
 
 	if IsGitRepository() && context.Args().Len() == 0 {
@@ -151,17 +154,14 @@ func GetPathParam(context *cli.Context) string {
 		} else if len(remotes) == 1 {
 			path = GetRemotePath(remotes[0].Config().Name)
 		} else {
-			color.Red.Println("No repo path provided")
-			color.Reset()
-			os.Exit(1)
+			return "", errors.New("Expected project path")
 		}
 
 	} else if context.Args().Len() > 0 {
 		path = context.Args().First()
 	} else {
-		color.Red.Println("Expected project path")
-		os.Exit(1)
+		return "", errors.New("Expected project path")
 	}
 
-	return path
+	return path, nil
 }

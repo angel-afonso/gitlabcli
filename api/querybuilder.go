@@ -4,34 +4,55 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
-	"os"
 	"reflect"
 	"strings"
 
 	"gitlab.com/angel-afonso/gitlabcli/utils"
-	"gopkg.in/gookit/color.v1"
 )
 
 // graphqlReq generate request pointer
-func graphqlReq(data *strings.Reader) *http.Request {
+func graphqlReq(data *strings.Reader) (*http.Request, error) {
 	req, err := http.NewRequest(post, graphql, data)
 
 	if err != nil {
-		color.Red.Println(err.Error())
-		os.Exit(1)
+		return nil, err
 	}
 
-	return req
+	return req, nil
 }
 
 // Query Send a query graphql request
-func (c *Client) Query(query interface{}, variables interface{}) {
-	bindGraphqlResponse(c.send(graphqlReq(strings.NewReader(formatQuery(query, variables)))), query)
+func (c *Client) Query(query interface{}, variables interface{}) error {
+	req, err := graphqlReq(strings.NewReader(formatQuery(query, variables)))
+
+	if err != nil {
+		return err
+	}
+
+	bytes, err := c.send(req)
+
+	if err != nil {
+		return err
+	}
+
+	return bindGraphqlResponse(bytes, query)
 }
 
 // Mutation Send a mutation graphql request
-func (c *Client) Mutation(mutation interface{}, vars interface{}) {
-	bindGraphqlResponse(c.send(graphqlReq(strings.NewReader(formatMutation(mutation, vars)))), mutation)
+func (c *Client) Mutation(mutation interface{}, vars interface{}) error {
+	req, err := graphqlReq(strings.NewReader(formatMutation(mutation, vars)))
+
+	if err != nil {
+		return err
+	}
+
+	bytes, err := c.send(req)
+
+	if err != nil {
+		return err
+	}
+
+	return bindGraphqlResponse(bytes, mutation)
 }
 
 // generateQueryBody format a string as a graphql query body

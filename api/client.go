@@ -2,13 +2,12 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 
 	"gitlab.com/angel-afonso/gitlabcli/auth"
-	"gopkg.in/gookit/color.v1"
 )
 
 const (
@@ -37,34 +36,35 @@ func NewClient(session *auth.Session) Client {
 	return Client{session}
 }
 
-func bindGraphqlResponse(body []byte, bind interface{}) {
+func bindGraphqlResponse(body []byte, bind interface{}) error {
 	response := wrapper{Data: bind}
 	err := json.Unmarshal(body, &response)
 
 	if err != nil {
-		color.Red.Printf("\n%s\n", err.Error())
-		os.Exit(1)
+		return err
 	}
 
 	if len(response.Errors) > 0 {
 		for _, err := range response.Errors {
-			color.Red.Println(err.Message)
-			os.Exit(1)
+			return errors.New(err.Message)
 		}
 	}
+
+	return nil
 }
 
-func bindRestResponse(body []byte, bind interface{}) {
+func bindRestResponse(body []byte, bind interface{}) error {
 	response := bind
 	err := json.Unmarshal(body, &response)
 
 	if err != nil {
-		color.Red.Println(err.Error())
-		os.Exit(1)
+		return err
 	}
+
+	return nil
 }
 
-func (c *Client) send(req *http.Request) []byte {
+func (c *Client) send(req *http.Request) ([]byte, error) {
 	req.Header.Set("Authorization", fmt.Sprintf("%s %s", c.session.Type, c.session.Token))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -72,17 +72,15 @@ func (c *Client) send(req *http.Request) []byte {
 	resp, err := client.Do(req)
 
 	if err != nil {
-		color.Red.Println(err.Error())
-		os.Exit(1)
+		return nil, err
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 
 	if err != nil {
-		color.Red.Println(err.Error())
-		os.Exit(1)
+		return nil, err
 	}
 
-	return body
+	return body, nil
 }

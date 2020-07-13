@@ -1,8 +1,8 @@
 package actions
 
 import (
+	"errors"
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/go-git/go-git/v5/plumbing"
@@ -17,7 +17,10 @@ import (
 // by given project path
 func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
-		path := utils.GetPathParam(context)
+		path, err := utils.GetPathParam(context)
+		if err != nil {
+			return err
+		}
 
 		var head *plumbing.Reference
 		var commit *object.Commit
@@ -133,21 +136,21 @@ func AssignMergeRequest(client *api.Client) func(*cli.Context) error {
 	return func(context *cli.Context) error {
 		spinner := utils.ShowSpinner()
 
-		path := utils.GetPathParam(context)
-
-		args := context.Args()
+		path, err := utils.GetPathParam(context)
+		if err != nil {
+			return err
+		}
 
 		var iid string
 
-		if args.Len() > 1 {
-			iid = args.Get(1)
+		if context.Args().Len() > 1 {
+			iid = context.Args().Get(1)
 		} else {
-			iid = args.Get(0)
+			iid = context.Args().Get(0)
 		}
 
 		if iid == "" {
-			color.Red.Println("iid is required")
-			os.Exit(1)
+			return errors.New("iid is required")
 		}
 
 		users := getProjectMembers(client, path)

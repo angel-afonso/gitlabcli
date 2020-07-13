@@ -10,5 +10,5 @@ type User struct {
 
 // Print user data
 func (u *User) Print() {
-	color.LightBlue.Println("%s (%s)", u.Name, u.Username)
+	color.LightBlue.Printf("%s (%s)\n", u.Name, u.Username)
 }
