@@ -164,6 +164,10 @@ func formatVariables(vars interface{}) (string, string) {
 				break
 			case reflect.String:
 				varType = "String,"
+				if val := fmt.Sprintf("%s", value); val == "null" {
+					varValue = val
+					break
+				}
 				varValue = fmt.Sprintf(`"%s"`, value)
 				break
 			default:

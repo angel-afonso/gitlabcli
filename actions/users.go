@@ -10,5 +10,7 @@ type User struct {
 
 // Print user data
 func (u *User) Print() {
-	color.LightBlue.Printf("%s (%s)\n", u.Name, u.Username)
+	color.Bold.Print(u.Name)
+	color.Reset()
+	color.OpItalic.Printf(" (%s)\n", u.Username)
 }

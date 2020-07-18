@@ -12,7 +12,7 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
-type projectList struct {
+type baseProject struct {
 	Name              string
 	Description       string
 	NameWithNamespace string
@@ -22,7 +22,7 @@ type projectList struct {
 	FullPath          string
 }
 
-func (project *projectList) Print() {
+func (project *baseProject) Print() {
 	fmt.Println(color.Bold.Sprintf(project.NameWithNamespace))
 	fmt.Println(project.Name)
 	fmt.Println(project.FullPath)
@@ -38,7 +38,7 @@ func (project *projectList) Print() {
 
 // Project struct
 type Project struct {
-	projectList     `graphql:"inner"`
+	baseProject     `graphql:"inner"`
 	CreatedAt       string
 	OpenIssuesCount int
 	SSHURLToRepo    string `graphql-bind:"sshUrlToRepo"`
@@ -98,7 +98,7 @@ func ProjectList(client *api.Client) func(*cli.Context) error {
 					EndCursor   string
 					HasNextPage bool
 				}
-				Nodes []projectList
+				Nodes []baseProject
 			} `graphql:"(membership: true, first: 10,after: $after)"`
 		}
 

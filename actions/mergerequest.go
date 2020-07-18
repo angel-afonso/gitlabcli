@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/eiannone/keyboard"
 	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/gookit/color"
@@ -12,6 +13,210 @@ import (
 	"gitlab.com/angel-afonso/gitlabcli/api"
 	"gitlab.com/angel-afonso/gitlabcli/utils"
 )
+
+type baseMergeRequest struct {
+	Iid    string `graphql-type:"string!"`
+	Title  string
+	State  string
+	Author User
+}
+
+func (mr *baseMergeRequest) Print() {
+	color.OpItalic.Printf("!%s\n", mr.Iid)
+	color.Bold.Println(mr.Title)
+	fmt.Printf("State: %s\n", mr.State)
+	mr.Author.Print()
+	println()
+}
+
+// MergeRequest graphql struct
+type MergeRequest struct {
+	baseMergeRequest `graphql:"inner"`
+	Description      string
+	SourceBranch     string
+	TargetBranch     string
+	Assignees        struct {
+		Nodes []User
+	}
+	Author User
+}
+
+// Print merge request
+func (mr *MergeRequest) Print() {
+	color.OpItalic.Printf("!%s\n", mr.Iid)
+	color.Bold.Println(mr.Title)
+	if mr.Description != "" {
+		fmt.Println(mr.Description)
+	}
+	println()
+	color.OpItalic.Printf("Source branch: %s\n", mr.SourceBranch)
+	color.OpItalic.Printf("Target branch: %s\n", mr.TargetBranch)
+	println()
+
+	fmt.Println("Assignees:")
+
+	for _, user := range mr.Assignees.Nodes {
+		fmt.Print("  - ")
+		user.Print()
+	}
+
+	println()
+	fmt.Printf("State: %s\n", color.Bold.Sprint(mr.State))
+	println()
+	fmt.Print("Author: ")
+	mr.Author.Print()
+
+	println()
+}
+
+func mergeRequestState() string {
+	if Opened {
+		return "opened"
+	}
+
+	if Closed {
+		return "closed"
+	}
+
+	if Merged {
+		return "merged"
+	}
+
+	return "null"
+}
+
+// MergeRequestList display a paginated merge request for a given project by path
+func MergeRequestList(client *api.Client) func(*cli.Context) error {
+	return func(context *cli.Context) error {
+		path, err := utils.GetPathParam(context)
+
+		if err != nil {
+			return err
+		}
+
+		spinner := utils.ShowSpinner()
+
+		var query struct {
+			Project *struct {
+				MergeRequests struct {
+					PageInfo struct {
+						EndCursor   string
+						HasNextPage bool
+					}
+					Nodes []baseMergeRequest
+				} `graphql:"(first: 10, after: $after, state: $state)"`
+			} `graphql:"(fullPath:$path)"`
+		}
+
+		variables := struct {
+			path  string `graphql-type:"ID!"`
+			after string
+			state string `graphql-type:"MergeRequestState"`
+		}{
+			path:  path,
+			after: "",
+			state: mergeRequestState(),
+		}
+
+		if err := client.Query(&query, variables); err != nil {
+			return err
+		}
+
+		for {
+			spinner.Stop()
+
+			if query.Project == nil {
+				return errors.New("An error has occurred, check the repository path and permissions")
+			}
+
+			for _, issue := range query.Project.MergeRequests.Nodes {
+				issue.Print()
+			}
+
+			if !query.Project.MergeRequests.PageInfo.HasNextPage {
+				return nil
+			}
+
+			if err := keyboard.Open(); err != nil {
+				return err
+			}
+
+			defer keyboard.Close()
+
+			for {
+				char, key, _ := keyboard.GetKey()
+
+				if key == keyboard.KeyEnter {
+					break
+				}
+
+				if char == 'q' || key == keyboard.KeyCtrlC || key == keyboard.KeyEsc {
+					println()
+					return nil
+				}
+			}
+
+			println()
+
+			variables.after = query.Project.MergeRequests.PageInfo.EndCursor
+			spinner.Start()
+
+			client.Query(&query, variables)
+		}
+	}
+}
+
+// ShowMergeRequest search and display a merge request by iid
+func ShowMergeRequest(client *api.Client) func(*cli.Context) error {
+	return func(context *cli.Context) error {
+		path, err := utils.GetPathParam(context)
+
+		if err != nil {
+			return err
+		}
+
+		var iid string
+
+		if context.Args().Len() > 1 {
+			iid = context.Args().Get(1)
+		} else {
+			iid = context.Args().Get(0)
+		}
+
+		if iid == "" {
+			return errors.New("iid is required")
+		}
+
+		spinner := utils.ShowSpinner()
+
+		var query struct {
+			Project struct {
+				MergeRequest *MergeRequest `graphql:"(iid:$iid)"`
+			} `graphql:"(fullPath:$path)"`
+		}
+
+		variables := struct {
+			path string `graphql-type:"ID!"`
+			iid  string `graphql-type:"String!"`
+		}{
+			path,
+			iid,
+		}
+
+		if err := client.Query(&query, variables); err != nil {
+			return err
+		}
+
+		spinner.Stop()
+
+		if query.Project.MergeRequest != nil {
+			query.Project.MergeRequest.Print()
+			return nil
+		}
+
+		return errors.New("An error has occurred, check the repository path and permissions")
+	}
+}
 
 // CreateMergeRequest send a request to create merge request
 // by given project path
@@ -115,7 +320,8 @@ func CreateMergeRequest(client *api.Client) func(*cli.Context) error {
 
 			for index, user := range users {
 				color.Blue.Printf("%d ", index+1)
-				color.Green.Printf("%s (%s)\n", user.Name, user.Username)
+				color.Reset()
+				fmt.Printf("%s (%s)\n", color.Bold.Sprint(user.Name), color.OpItalic.Sprint(user.Username))
 			}
 
 			index := utils.ReadInt()
@@ -159,7 +365,8 @@ func AssignMergeRequest(client *api.Client) func(*cli.Context) error {
 
 		for index, user := range users {
 			color.Blue.Printf("%d ", index+1)
-			color.Green.Printf("%s (%s)\n", user.Name, user.Username)
+			color.Reset()
+			fmt.Printf("%s (%s)\n", color.Bold.Sprint(user.Name), color.OpItalic.Sprint(user.Username))
 		}
 
 		index := utils.ReadInt()
@@ -198,5 +405,5 @@ func assignUserForMergeRequest(client *api.Client, iid string, path string, user
 
 	spinner.Stop()
 
-	color.Green.Printf("%s assigned to merge request !%s\n", usernames[0], iid)
+	color.LightGreen.Printf("%s assigned to merge request !%s\n", usernames[0], iid)
 }

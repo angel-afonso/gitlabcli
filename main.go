@@ -20,7 +20,7 @@ func main() {
 	app := &cli.App{
 		Name:        "gitlabcli",
 		Usage:       "Gitlab CLI",
-		Version:     "0.1.2",
+		Version:     "0.2.0",
 		Description: "Command line interface to interact with the gitlab API",
 		Commands: []*cli.Command{
 			{
@@ -75,6 +75,36 @@ func main() {
 				Usage:       "Handle merge request",
 				Description: "Merge Request related commands",
 				Subcommands: []*cli.Command{
+					{
+						Name:        "list",
+						Usage:       "Display a merge requests list",
+						Description: "Display paginated list of project's merge requests. Path is optional if the current directory is a git repository with remote in gitlab",
+						UsageText:   "gitlabcli mergerequest list [path]",
+						Action:      actions.MergeRequestList(&client),
+						Flags: []cli.Flag{
+							&cli.BoolFlag{
+								Name:        "opened",
+								Value:       false,
+								Usage:       "Display only opened merge requests",
+								Aliases:     []string{"o"},
+								Destination: &actions.Opened,
+							},
+							&cli.BoolFlag{
+								Name:        "cloed",
+								Value:       false,
+								Usage:       "Display only closed merge requests",
+								Aliases:     []string{"c"},
+								Destination: &actions.Closed,
+							},
+						},
+					},
+					{
+						Name:        "view",
+						Usage:       "Display a merge requests",
+						Description: "Display project's merge request by iid. Path is optional if the current directory is a git repository with remote in gitlab",
+						UsageText:   "gitlabcli mergerequest view [path] <iid>",
+						Action:      actions.ShowMergeRequest(&client),
+					},
 					{
 						Name:        "create",
 						Usage:       "Create new merge request",

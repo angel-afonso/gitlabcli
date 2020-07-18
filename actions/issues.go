@@ -11,14 +11,7 @@ import (
 	"gopkg.in/gookit/color.v1"
 )
 
-var (
-	// Opened store flag --opened valie
-	Opened bool
-	// Closed store flag --closed valie
-	Closed bool
-)
-
-type issuesList struct {
+type baseIssue struct {
 	Iid       string
 	Title     string
 	State     string
@@ -27,7 +20,7 @@ type issuesList struct {
 	}
 }
 
-func (il *issuesList) Print() {
+func (il *baseIssue) Print() {
 	color.Bold.Println(il.Title)
 	fmt.Println(il.State)
 	color.OpItalic.Printf("#%s\n", il.Iid)
@@ -41,10 +34,22 @@ func (il *issuesList) Print() {
 	println()
 }
 
+func issueState() string {
+	if Opened {
+		return "opened"
+	}
+
+	if Closed {
+		return "closed"
+	}
+
+	return "null"
+}
+
 // Issue struct representation
 type Issue struct {
-	issuesList `graphql:"inner"`
-	Author     User
+	baseIssue `graphql:"inner"`
+	Author    User
 }
 
 // Print issue
@@ -84,17 +89,19 @@ func IssuesList(client *api.Client) func(*cli.Context) error {
 						EndCursor   string
 						HasNextPage bool
 					}
-					Nodes []issuesList
-				} `graphql:"(first: 10, after: $after)"`
+					Nodes []baseIssue
+				} `graphql:"(first: 10, after: $after, state: $state)"`
 			} `graphql:"(fullPath:$path)"`
 		}
 
 		variables := struct {
 			path  string `graphql-type:"ID!"`
 			after string
+			state string `graphql-type:"IssuableState"`
 		}{
 			path:  path,
 			after: "",
+			state: issueState(),
 		}
 
 		if err := client.Query(&query, variables); err != nil {
